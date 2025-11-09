@@ -302,48 +302,50 @@ ${faqContext || "(no strong FAQ matches)"}
     }
 // --- Normalize to exactly ONE booking link ---
 if (BOOKING_URL) {
-  const linkText = `[Schedule a call](${BOOKING_URL})`;
+  const linkText = `[schedule a call](${BOOKING_URL})`;
   const host = (() => {
-    try { return new URL(BOOKING_URL).hostname.replace(/\./g, "\\."); } catch { return "cal\\.com"; }
+    try {
+      return new URL(BOOKING_URL).hostname.replace(/\./g, "\\.");
+    } catch {
+      return "call\\.com";
+    }
   })();
 
   // 1) Remove any existing booking link variants (bracketed, raw, or extra parens)
-  //    • [anything](https://host/...)
-  //    • [https://host/...]
-  //    • https://host/...
   const bookingMarkdownLink = new RegExp(`\\[[^\\]]*\\]\\((https?:\\/\\/(?:www\\.)?${host}[^)]*)\\)`, "gi");
-  const bracketedRaw = new RegExp(`\\[(https?:\\/\\/(?:www\\.)?${host}[^\\]]*)\\]`, "gi");
-  const rawUrl = new RegExp(`https?:\\/\\/(?:www\\.)?${host}[^\\s)\\]]*`, "gi");
+  const bracketedRaw = new RegExp(`\\((https?:\\/\\/(?:www\\.)?${host}[^)]*)\\)`, "gi");
+  const rawUrl = new RegExp(`https?:\\/\\/(?:www\\.)?${host}[^\\s\\]]*`, "gi");
 
   replyText = replyText
     .replace(bookingMarkdownLink, "")
     .replace(bracketedRaw, "")
     .replace(rawUrl, "")
-    .replace(/\s{2,}/g, " ")             // collapse extra spaces
-    .replace(/ \.(?=\s|$)/g, ".");       // fix " ."
+    .replace(/\s{2,}/g, " ") // collapse extra spaces
+    .replace(/(.\s*[\.,!?:;]){2,}/g, "."); // minor punctuation tidy
 
-  // 2) If user intent suggests booking, try to inline-replace the phrase with the link
+  // 2) If user intent suggests booking, add link naturally
   const lower = userMsg.toLowerCase();
   const wantsBooking =
     /(book|schedule|meeting|call|chat|talk)/i.test(lower) ||
-    /(book|schedule).* (call|meeting)/i.test(replyText);
+    /(book|schedule).*(call|meeting)/i.test(replyText);
 
   if (wantsBooking) {
     const phrase = /(schedule a call|book a (quick )?call|book a meeting)/i;
+
     if (phrase.test(replyText)) {
+      // Inline replace
       replyText = replyText.replace(phrase, linkText);
-    } else if (!/\[Schedule a call\]\(/i.test(replyText)) {
-      // 3) Otherwise, append once — neatly.
-      replyText = `${replyText.trim()} You can ${linkText} when you’re ready.`;
+    } else if (!/\[.*\]\(https?:\/\/.*\)/.test(replyText)) {
+      // Append a clean clickable link once
+      replyText = replyText.trim().replace(/[.:!?]+$/, "");
+      replyText += `. You can ${linkText} 😊`;
     }
   }
 }
 
-
-
-    // update memory (keep it lean)
-    appendHistory(sessionId, "user", userMsg);
-    appendHistory(sessionId, "assistant", replyText);
+// --- Update memory (keep it lean) ---
+appendHistory(sessionId, "user", userMsg);
+appendHistory(sessionId, "assistant", replyText);
 
     // nudge email capture only when it makes sense
     const lead =
