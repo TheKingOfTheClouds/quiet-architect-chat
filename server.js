@@ -300,6 +300,26 @@ ${faqContext || "(no strong FAQ matches)"}
 
       replyText = out.choices?.[0]?.message?.content?.trim() || replyText;
     }
+    // --- Add hyperlink dynamically when appropriate ---
+const lower = userMsg.toLowerCase();
+const wantsBooking =
+  /(book|call|schedule|meeting|talk|chat)/i.test(lower) ||
+  replyText.toLowerCase().includes("book a quick") ||
+  replyText.toLowerCase().includes("schedule a call");
+
+if (BOOKING_URL && wantsBooking) {
+  // Replace common phrases with a clickable link
+  replyText = replyText.replace(
+    /\b(schedule a call|book a call|book a quick intro call|book a meeting)\b/gi,
+    (m) => `[${m}](${BOOKING_URL})`
+  );
+
+  // If no link present, append one naturally
+  if (!/\[.*\]\(.*\)/.test(replyText)) {
+    replyText += ` — you can always [schedule a call](${BOOKING_URL}) when you're ready.`;
+  }
+}
+
 
     // update memory (keep it lean)
     appendHistory(sessionId, "user", userMsg);
