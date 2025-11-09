@@ -224,55 +224,69 @@ app.post("/chat", async (req, res) => {
   try {
     const { message = "", meta = {}, sessionId = "anon" } = req.body || {};
     const userMsg = String(message || "").trim();
-    maybeLearnName(sessionId, userMsg);
-
     if (!userMsg) return res.json({ reply: "Say that again?" });
 
-// If they ask about their name, answer directly
-if (/\b(what'?s|what is|do you remember)\s+my\s+name\b/i.test(userMsg)) {
-  const n = visitorName;
-  return res.json({
-    reply: n
-      ? `You told me your name is ${n}.`
-      : `I don't have it yet — want to share your name?`
-  });
-}
+    // Learn/recall first name from this message
+    maybeLearnName(sessionId, userMsg);
+    const visitorName = firstName(sessionId);
 
+    // Simple server-side analytics
+    console.log("Incoming:", { text: userMsg, path: meta?.path, referer: meta?.referer });
 
+    // Pick relevant FAQs
+    const matches = topFaqs(userMsg, 4);
+    const faqContext = matches
+      .map((f, i) => `FAQ #${i + 1}\nQ: ${f.q}\nA: ${f.a}`)
+      .join("\n\n");
 
-    // brand voice / prompt
+    // If they ask about their name, answer directly (now that visitorName exists)
+    if (/\b(what'?s|what is|do you remember)\s+my\s+name\b/i.test(userMsg)) {
+      return res.json({
+        reply: visitorName
+          ? `You told me your name is ${visitorName}.`
+          : `I don't have it yet — want to share your name?`
+      });
+    }
+
+    // Brand voice / prompt
     const systemPrompt = `
 You are "Architect," a friendly teammate for A Quiet Architect.
 Be warm, casual, and confident; avoid corporate fluff and over-exclamation.
 Use short human sentences. If unclear, ask one crisp question.
 If a call would help, you can offer it gently.
+
 Known:
 - Booking link: ${BOOKING_URL || "(not set)"}.
 - Ask for name + email together only if needed.
 ${visitorName ? `Visitor’s first name: ${visitorName}` : ""}
+
 Relevant FAQs (may be empty):
 ${faqContext || "(no strong FAQ matches)"}
 `.trim();
 
-    // default reply fallback
+    // Default reply fallback (in case OpenAI is unavailable)
     let replyText =
       (visitorName ? `${visitorName}, ` : "") +
       `happy to help. Want me to book a quick intro call so we can scope what you need${
         BOOKING_URL ? ` (you can [schedule a call](${BOOKING_URL}))` : ""
       }?`;
 
-    // call OpenAI if configured
+    // Call OpenAI if configured — DO NOT crash on errors
     if (openai) {
-      const messages = [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userMsg },
-      ];
-      const out = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        temperature: 0.7,
-        messages,
-      });
-      replyText = out.choices?.[0]?.message?.content?.trim() || replyText;
+      try {
+        const out = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          temperature: 0.7,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMsg },
+          ],
+        });
+        replyText = out.choices?.[0]?.message?.content?.trim() || replyText;
+      } catch (e) {
+        console.error("OpenAI error:", e?.status || "", e?.message || e);
+        // keep fallback reply
+      }
     }
 
     // --- Booking link cleanup + smart insertion ---
@@ -315,11 +329,11 @@ ${faqContext || "(no strong FAQ matches)"}
       }
     }
 
-    // --- Update memory (keep it lean) ---
+    // Update memory (keep it lean)
     appendHistory(sessionId, "user", userMsg);
     appendHistory(sessionId, "assistant", replyText);
 
-    // --- Nudge email capture only when it makes sense ---
+    // Nudge email capture only when it makes sense
     const lead =
       /book|call|pricing|price|quote|contact|email|schedule|meeting/i.test(userMsg)
         ? { ask_email: true }
@@ -328,9 +342,11 @@ ${faqContext || "(no strong FAQ matches)"}
     res.json({ reply: replyText, lead });
   } catch (err) {
     console.error("Error in /chat:", err);
-    res.status(500).json({ reply: "Hmm — I hit a snag. Mind trying again in a moment?" });
+    // Still reply (avoid dropping to the widget “snag” UX)
+    res.json({ reply: "I hit a snag on my side, but I'm here. Want to try that again or book a quick call?" });
   }
 });
+
 
 
 
