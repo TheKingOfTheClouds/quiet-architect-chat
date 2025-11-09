@@ -8,38 +8,49 @@ import OpenAI from "openai";
 
 const app = express();
 
-// ----- CORS -----
-app.use(
-  cors({
-    origin: true,
-    methods: ["GET", "POST", "OPTIONS"],
-    allowedHeaders: ["Content-Type"],
-  })
-);
+/* -------------------- ENV -------------------- */
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || ""; // e.g., https://yourdomain.com (optional)
+const BOOKING_URL = process.env.BOOKING_URL || "";          // e.g., Cal.com / Calendly link
+const CONTACT_FORM_URL = process.env.CONTACT_FORM_URL || "";// e.g., Framer/Typeform form
+const ZAPIER_HOOK_URL = process.env.ZAPIER_HOOK_URL || "";  // optional Zapier catch hook
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
+
+/* -------------------- CORS -------------------- */
+app.use(cors({
+  origin: FRONTEND_ORIGIN ? [FRONTEND_ORIGIN, /\.onrender\.com$/] : true,
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+}));
 app.options("*", cors());
 app.use(bodyParser.json());
 
-// ----- Load FAQs (optional but recommended) -----
+/* -------------------- OpenAI -------------------- */
+const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
+
+/* -------------------- Load FAQs -------------------- */
 const FAQ_PATH = path.join(process.cwd(), "faqs.json");
 let FAQS = [];
 try {
   if (fs.existsSync(FAQ_PATH)) {
-    FAQS = JSON.parse(fs.readFileSync(FAQ_PATH, "utf-8"));
-    if (!Array.isArray(FAQS)) FAQS = [];
+    const raw = JSON.parse(fs.readFileSync(FAQ_PATH, "utf-8"));
+    // Support either [{q, a}] or [{question, answer}]
+    FAQS = (raw || []).map(r => ({
+      q: r.q ?? r.question ?? "",
+      a: r.a ?? r.answer ?? ""
+    })).filter(r => r.q && r.a);
   }
 } catch (e) {
-  console.error("Failed to load faqs.json:", e);
+  console.warn("No faqs.json found or invalid JSON — continuing with empty FAQ set.");
 }
 
-// naive keyword scorer (fast, no embeddings)
+/* --------- Tiny FAQ scorer: fast, good-enough --------- */
 function scoreFaq(query, faq) {
   const q = String(query || "").toLowerCase();
   const text = (faq.q + " " + faq.a).toLowerCase();
-  // overlap by words
   const terms = q.split(/[^a-z0-9]+/).filter(Boolean);
   return terms.reduce((s, t) => s + (text.includes(t) ? 1 : 0), 0);
 }
-function topFaqs(query, k = 3) {
+function topFaqs(query, k = 4) {
   if (!FAQS.length) return [];
   return [...FAQS]
     .map((f) => ({ f, s: scoreFaq(query, f) }))
@@ -49,66 +60,110 @@ function topFaqs(query, k = 3) {
     .map((x) => x.f);
 }
 
-// ----- OpenAI (optional; graceful fallback without it) -----
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
+/* -------------------- Memory per session -------------------- */
+const sessions = new Map(); // sessionId -> [{role, content, ts}]
+function appendHistory(sessionId, role, content) {
+  const arr = sessions.get(sessionId) || [];
+  arr.push({ role, content, ts: Date.now() });
+  // cap last ~12 messages to keep tokens low
+  sessions.set(sessionId, arr.slice(-12));
+}
 
-// simple in-memory session memory
-const sessions = new Map(); // sessionId -> [{role, content}]
+/* -------------------- Health -------------------- */
+app.get("/", (_req, res) => {
+  res.send("A Quiet Architect API is running.");
+});
 
-// ----- Routes -----
-app.get("/", (_, res) => res.send("A Quiet Architect API is running..."));
+/* -------------------- Config for widget -------------------- */
+app.get("/config", (_req, res) => {
+  res.json({
+    booking: BOOKING_URL || null,
+    contact: CONTACT_FORM_URL || null
+  });
+});
 
-app.post("/chat", async (req, res) => {
-  const { message = "", meta = {}, sessionId = "anon" } = req.body || {};
-  const userMsg = String(message).trim();
-  if (!userMsg) return res.json({ reply: "Say that again?" });
-
+/* -------------------- Lead capture (+ optional Zapier) -------------------- */
+app.post("/lead", async (req, res) => {
   try {
-    // pick FAQ context
-    const matches = topFaqs(userMsg, 3);
+    const { email = "", name = "", meta = {} } = req.body || {};
+    // basic email guard
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ ok: false, error: "Invalid email" });
+    }
+
+    // Log locally or persist if you add a DB later
+    console.log("New lead:", { email, name, meta });
+
+    // Optional: forward to Zapier
+    if (ZAPIER_HOOK_URL) {
+      await fetch(ZAPIER_HOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name, meta, source: "aqa-widget" })
+      });
+    }
+
+    return res.json({ ok: true });
+  } catch (e) {
+    console.error("lead error:", e);
+    res.status(500).json({ ok: false });
+  }
+});
+
+/* -------------------- Chat -------------------- */
+app.post("/chat", async (req, res) => {
+  try {
+    const { message = "", meta = {}, sessionId = "anon" } = req.body || {};
+    const userMsg = String(message || "").trim();
+    if (!userMsg) return res.json({ reply: "Say that again?" });
+
+    // simple server-side analytics
+    console.log("Incoming:", { text: userMsg, path: meta?.path, referer: meta?.referer });
+
+    // pick relevant FAQs
+    const matches = topFaqs(userMsg, 4);
     const faqContext = matches
       .map((f, i) => `FAQ #${i + 1}\nQ: ${f.q}\nA: ${f.a}`)
       .join("\n\n");
 
     // conversation history
-    const history = sessions.get(sessionId) || [];
+    const history = (sessions.get(sessionId) || []).map(h => ({
+      role: h.role, content: h.content
+    }));
 
-    // brand voice / personality
+    // brand voice
     const systemPrompt = `
-You are "Architect" — the voice, mind, and presence of A Quiet Architect.
+You are "Architect" — the voice of A Quiet Architect.
 
 Purpose:
-Guide people with calm precision. Simplify chaos. Design systems that flow.
-You are warm, confident, and human — never waste words.
+- Guide people with calm precision. Simplify chaos. Design systems that flow.
 
 Personality:
-- Expert in creativity + technology.
-- Short, grounded sentences. No fluff.
-- Calm, unhurried, controlled mastery.
-- Sound like someone who designs systems that “just work.”
-- Invite an intro call when appropriate (natural, not pushy).
+- Confident, minimal, human. No fluff. Helpful and direct.
 
 Style:
-- Elegant brevity; handcrafted phrasing.
+- Short sentences. Elegant phrasing.
 - One thought → line break → next insight.
-- Use short lists for clarity when helpful.
-- Never robotic, salesy, or “coachy.”
-- Always close loops.
+- Offer an intro call naturally when appropriate.
 
 Brand context:
-We design brands, websites, and automation systems that operate seamlessly — invisible but effective.
-Audience: small business owners, creatives, professionals seeking simplicity and cohesion.
+We design brands, websites, and automation systems that run quietly and smoothly in the background.
+Audience: small businesses, creatives, professionals who want cohesion and calm.
 
 Relevant FAQs (may be empty):
 ${faqContext || "(no strong FAQ matches)"}
+
+Rules:
+- If uncertain, say so and suggest a quick intro call.
+- Prefer <120 words unless detail is requested.
+- Never spam links; only share if asked or clearly useful.
 `.trim();
 
-    let replyText =
-      `You said: ${userMsg}. ` +
-      `Want me to book a quick intro call so we can scope exactly what you need?`;
+    // default reply fallback
+    let replyText = `You said: ${userMsg}. Want me to book a quick intro call?`;
 
     if (openai) {
-      const msgs = [
+      const messages = [
         { role: "system", content: systemPrompt },
         ...history,
         { role: "user", content: userMsg },
@@ -117,19 +172,15 @@ ${faqContext || "(no strong FAQ matches)"}
       const out = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         temperature: 0.6,
-        messages: msgs,
+        messages
       });
 
       replyText = out.choices?.[0]?.message?.content?.trim() || replyText;
     }
 
-    // update memory (cap to ~12 turns)
-    const newHistory = [
-      ...history,
-      { role: "user", content: userMsg },
-      { role: "assistant", content: replyText },
-    ].slice(-12);
-    sessions.set(sessionId, newHistory);
+    // update session memory
+    appendHistory(sessionId, "user", userMsg);
+    appendHistory(sessionId, "assistant", replyText);
 
     // lead hint
     const lead =
@@ -144,5 +195,6 @@ ${faqContext || "(no strong FAQ matches)"}
   }
 });
 
+/* -------------------- Boot -------------------- */
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
