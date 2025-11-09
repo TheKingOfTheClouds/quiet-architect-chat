@@ -231,6 +231,14 @@ app.post("/chat", async (req, res) => {
 maybeLearnName(sessionId, userMsg);
 const visitorName = firstName(sessionId);
 
+
+if (/what'?s\s+my\s+name\??/i.test(userMsg)) {
+  const n = visitorName;
+  return res.json({ reply: n ? `You told me your name is ${n}.` : `I don’t have it yet — want to share your name?` });
+}
+
+
+
     // brand voice / prompt
     const systemPrompt = `
 You are "Architect," a friendly teammate for A Quiet Architect.
