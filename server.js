@@ -299,32 +299,29 @@ ${faqContext || "(no strong FAQ matches)"}
       });
 
       replyText = out.choices?.[0]?.message?.content?.trim() || replyText;
-    }
-// --- Normalize to exactly ONE booking link ---
+      
+// --- Booking link cleanup + smart insertion ---
 if (BOOKING_URL) {
   const linkText = `[schedule a call](${BOOKING_URL})`;
-  const host = (() => {
-    try {
-      return new URL(BOOKING_URL).hostname.replace(/\./g, "\\.");
-    } catch {
-      return "call\\.com";
-    }
+  const hostEsc = (() => {
+    try { return new URL(BOOKING_URL).hostname.replace(/\./g, "\\."); }
+    catch { return "cal\\.com"; }
   })();
 
-  // 1) Remove any existing booking link variants (bracketed, raw, or extra parens)
-  const bookingMarkdownLink = new RegExp(`\\[[^\\]]*\\]\\((https?:\\/\\/(?:www\\.)?${host}[^)]*)\\)`, "gi");
-  const bracketedRaw = new RegExp(`\\((https?:\\/\\/(?:www\\.)?${host}[^)]*)\\)`, "gi");
-  const rawUrl = new RegExp(`https?:\\/\\/(?:www\\.)?${host}[^\\s\\]]*`, "gi");
+  // Remove any existing link variants (markdown, parens, raw)
+  const bookingMarkdown = new RegExp(`\\[[^\\]]*\\]\\((https?:\\/\\/(?:www\\.)?${hostEsc}[^)]*)\\)`, "gi");
+  const parenUrl = new RegExp(`\\((https?:\\/\\/(?:www\\.)?${hostEsc}[^)]*)\\)`, "gi");
+  const rawUrl = new RegExp(`https?:\\/\\/(?:www\\.)?${hostEsc}[^\\s\\]]*`, "gi");
 
-  replyText = replyText
-    .replace(bookingMarkdownLink, "")
-    .replace(bracketedRaw, "")
+  replyText = (replyText || "")
+    .replace(bookingMarkdown, "")
+    .replace(parenUrl, "")
     .replace(rawUrl, "")
-    .replace(/\s{2,}/g, " ") // collapse extra spaces
-    .replace(/(.\s*[\.,!?:;]){2,}/g, "."); // minor punctuation tidy
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
-  // 2) If user intent suggests booking, add link naturally
-  const lower = userMsg.toLowerCase();
+  // Detect if user intent = booking or call
+  const lower = (userMsg || "").toLowerCase();
   const wantsBooking =
     /(book|schedule|meeting|call|chat|talk)/i.test(lower) ||
     /(book|schedule).*(call|meeting)/i.test(replyText);
@@ -333,11 +330,11 @@ if (BOOKING_URL) {
     const phrase = /(schedule a call|book a (quick )?call|book a meeting)/i;
 
     if (phrase.test(replyText)) {
-      // Inline replace
+      // Inline replacement for "schedule a call"
       replyText = replyText.replace(phrase, linkText);
-    } else if (!/\[.*\]\(https?:\/\/.*\)/.test(replyText)) {
-      // Append a clean clickable link once
-      replyText = replyText.trim().replace(/[.:!?]+$/, "");
+    } else if (!/\[[^\]]+\]\(https?:\/\/.*\)/.test(replyText)) {
+      // Otherwise append once neatly
+      replyText = replyText.replace(/[.:!?]+$/, ""); // tidy punctuation
       replyText += `. You can ${linkText} 😊`;
     }
   }
