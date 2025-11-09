@@ -142,6 +142,15 @@ app.get("/config", (_req, res) => {
   });
 });
 
+/* -------------------- Friendly GET for /lead -------------------- */
+app.get("/lead", (_req, res) => {
+  res.send(`
+    <h2>A Quiet Architect Lead Endpoint</h2>
+    <p>This endpoint is for POST requests from the site widget or Zapier.</p>
+    <p>If you’re seeing this, the API is live and reachable ✅</p>
+  `);
+});
+
 /* -------------------- Lead capture (+ optional Zapier) -------------------- */
 app.post("/lead", async (req, res) => {
   try {
