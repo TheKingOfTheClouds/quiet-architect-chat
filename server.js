@@ -300,23 +300,31 @@ ${faqContext || "(no strong FAQ matches)"}
 
       replyText = out.choices?.[0]?.message?.content?.trim() || replyText;
     }
-    // --- Add hyperlink dynamically when appropriate ---
+// --- Add hyperlink dynamically when appropriate ---
 const lower = userMsg.toLowerCase();
 const wantsBooking =
-  /(book|call|schedule|meeting|talk|chat)/i.test(lower) ||
-  replyText.toLowerCase().includes("book a quick") ||
-  replyText.toLowerCase().includes("schedule a call");
+  /(book|call|schedule|meeting|talk|chat)/i.test(lower) &&
+  (replyText.toLowerCase().includes("book") ||
+   replyText.toLowerCase().includes("call") ||
+   replyText.toLowerCase().includes("schedule"));
 
 if (BOOKING_URL && wantsBooking) {
-  // Replace common phrases with a clickable link
-  replyText = replyText.replace(
-    /\b(schedule a call|book a call|book a quick intro call|book a meeting)\b/gi,
-    (m) => `[${m}](${BOOKING_URL})`
-  );
+  // Clean duplicate brackets or existing Markdown
+  replyText = replyText
+    .replace(/\[+|\]+/g, "") // remove extra square brackets
+    .replace(/\(https?:\/\/[^\)]*\)/g, ""); // remove duplicate URLs
 
-  // If no link present, append one naturally
-  if (!/\[.*\]\(.*\)/.test(replyText)) {
-    replyText += ` — you can always [schedule a call](${BOOKING_URL}) when you're ready.`;
+  // Insert clean hyperlink version
+  if (!/\[Schedule a call\]/i.test(replyText)) {
+    replyText = replyText.replace(
+      /(schedule a call|book a (quick )?call|book a meeting)/i,
+      `[Schedule a call](${BOOKING_URL})`
+    );
+  }
+
+  // If link not found anywhere, append it neatly
+  if (!/\[Schedule a call\]\(/i.test(replyText)) {
+    replyText += ` You can [schedule a call](${BOOKING_URL}) when you’re ready.`;
   }
 }
 
