@@ -1,7 +1,7 @@
 // server.js
 import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
+// import bodyParser from "body-parser"; // ❌ not needed with express.json()
 import fs from "fs";
 import path from "path";
 import OpenAI from "openai";
@@ -15,7 +15,7 @@ const CONTACT_FORM_URL = process.env.CONTACT_FORM_URL || "";// e.g., Framer/Type
 const ZAPIER_HOOK_URL = process.env.ZAPIER_HOOK_URL || "";  // optional Zapier catch hook
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
-// ---- CORS ----
+/* -------------------- CORS -------------------- */
 const ORIGINS = (process.env.FRONTEND_ORIGIN || "")
   .split(",")
   .map(s => s.trim())
@@ -24,13 +24,9 @@ const ORIGINS = (process.env.FRONTEND_ORIGIN || "")
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin) return cb(null, true); // server-to-server, curl, Postman
-
     try {
       const host = new URL(origin).hostname;
-      const allowed =
-        /\.onrender\.com$/.test(host) ||
-        ORIGINS.includes(origin);
-
+      const allowed = /\.onrender\.com$/.test(host) || ORIGINS.includes(origin);
       return cb(null, allowed);
     } catch {
       return cb(null, false);
@@ -40,6 +36,30 @@ app.use(cors({
   allowedHeaders: ["Content-Type"],
 }));
 app.options("*", cors());
+
+/* -------------------- JSON parsing (robust) -------------------- */
+// Prefer Express's built-in parser and accept common content types.
+app.use(express.json({
+  type: ['application/json', 'application/*+json', 'text/plain'],
+  limit: '1mb'
+}));
+
+// Rescue: if something came in as a raw string, parse once.
+app.use((req, _res, next) => {
+  if (typeof req.body === 'string') {
+    try { req.body = JSON.parse(req.body); } catch { /* ignore */ }
+  }
+  next();
+});
+
+// Light debug for POSTs (remove later if you want)
+app.use((req, _res, next) => {
+  if (req.method === 'POST') {
+    console.log('↘️  POST', req.url, 'CT:', req.headers['content-type']);
+    try { console.log('   body:', JSON.stringify(req.body)); } catch { console.log('   body: [unprintable]'); }
+  }
+  next();
+});
 
 /* -------------------- OpenAI -------------------- */
 const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
@@ -82,8 +102,7 @@ const sessions = new Map(); // sessionId -> [{role, content, ts}]
 function appendHistory(sessionId, role, content) {
   const arr = sessions.get(sessionId) || [];
   arr.push({ role, content, ts: Date.now() });
-  // cap last ~12 messages to keep tokens low
-  sessions.set(sessionId, arr.slice(-12));
+  sessions.set(sessionId, arr.slice(-12)); // cap last ~12 messages
 }
 
 /* -------------------- Health -------------------- */
@@ -123,7 +142,7 @@ app.post("/lead", async (req, res) => {
     // Slightly more tolerant email check (still safe)
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(email);
     if (!emailOk) {
-      return res.status(400).json({ ok: false, error: "Invalid email", debug: email });
+      return res.status(400).json({ ok: false, error: "Invalid email", debug: req.body || null });
     }
 
     console.log("New lead:", { email, name, meta });
