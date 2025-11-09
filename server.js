@@ -108,7 +108,8 @@ function appendHistory(sessionId, role, content) {
 // Friendly profile memory (per session)
 const profiles = new Map(); // sessionId -> { name?: string }
 
-// Tiny name extractor: "I'm Dom", "I am Dominique", "My name is Jay"
+
+// Tiny name extractor: "I'm Dom", "I am Dominique", "My name is Jay", "this is Jay"
 function maybeLearnName(sessionId, text) {
   const t = String(text || "");
   const m =
@@ -117,9 +118,7 @@ function maybeLearnName(sessionId, text) {
   if (m && m[1]) {
     const name = m[1].trim();
     const p = profiles.get(sessionId) || {};
-    if (!p.name) {
-      profiles.set(sessionId, { ...p, name });
-    }
+    if (!p.name) profiles.set(sessionId, { ...p, name });
   }
 }
 
@@ -217,13 +216,9 @@ app.post("/chat", async (req, res) => {
       .map((f, i) => `FAQ #${i + 1}\nQ: ${f.q}\nA: ${f.a}`)
       .join("\n\n");
 
-    // (optional) pull visitor name we may have captured this session
-    const profiles = new Map(); // if you have a profiles map, wire it up here
-    const getFirstNameFromSession = (sid) => {
-      const p = profiles.get(sid);
-      return p?.name || null;
-    };
-    const visitorName = getFirstNameFromSession(sessionId);
+   // Learn/recall the visitor's first name
+maybeLearnName(sessionId, userMsg);
+const visitorName = firstName(sessionId);
 
     // brand voice / prompt
     const systemPrompt = `
