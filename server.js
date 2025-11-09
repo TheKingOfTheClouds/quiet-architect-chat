@@ -105,6 +105,30 @@ function appendHistory(sessionId, role, content) {
   sessions.set(sessionId, arr.slice(-12)); // cap last ~12 messages
 }
 
+// Friendly profile memory (per session)
+const profiles = new Map(); // sessionId -> { name?: string }
+
+// Tiny name extractor: "I'm Dom", "I am Dominique", "My name is Jay"
+function maybeLearnName(sessionId, text) {
+  const t = String(text || "");
+  const m =
+    t.match(/\b(?:i\s*['’]?\s*m|i\s*am|my\s+name\s+is)\s+([A-Z][a-z'-]{1,30})\b/) ||
+    t.match(/\b(?:this\s+is)\s+([A-Z][a-z'-]{1,30})\b/);
+  if (m && m[1]) {
+    const name = m[1].trim();
+    const p = profiles.get(sessionId) || {};
+    if (!p.name) {
+      profiles.set(sessionId, { ...p, name });
+    }
+  }
+}
+
+function firstName(sessionId) {
+  const p = profiles.get(sessionId);
+  return p?.name || null;
+}
+
+
 /* -------------------- Health -------------------- */
 app.get("/", (_req, res) => {
   res.send("A Quiet Architect API is running.");
@@ -168,15 +192,19 @@ app.post("/lead", async (req, res) => {
   }
 });
 
-/* -------------------- Chat -------------------- */
+/* -------------------- Chat (friendly, personal) -------------------- */
 app.post("/chat", async (req, res) => {
   try {
     const { message = "", meta = {}, sessionId = "anon" } = req.body || {};
     const userMsg = String(message || "").trim();
     if (!userMsg) return res.json({ reply: "Say that again?" });
 
-    // simple server-side analytics
-    console.log("Incoming:", { text: userMsg, path: meta?.path, referer: meta?.referer });
+    // learn name if they tell us
+    maybeLearnName(sessionId, userMsg);
+    const visitorName = firstName(sessionId);
+
+    // light analytics
+    console.log("Incoming:", { text: userMsg, path: meta?.path, referer: meta?.referer, visitorName });
 
     // pick relevant FAQs
     const matches = topFaqs(userMsg, 4);
@@ -184,41 +212,45 @@ app.post("/chat", async (req, res) => {
       .map((f, i) => `FAQ #${i + 1}\nQ: ${f.q}\nA: ${f.a}`)
       .join("\n\n");
 
-    // conversation history
+    // conversation history (short)
     const history = (sessions.get(sessionId) || []).map(h => ({
       role: h.role, content: h.content
     }));
 
-    // brand voice
+    // Voice & behavior
     const systemPrompt = `
-You are "Architect" — the voice of A Quiet Architect.
+You are "Architect," a friendly teammate for *A Quiet Architect*.
+Your job: help clearly, quickly, and calmly — like a thoughtful human.
+Tone: warm, casual, confident. Natural contractions. No corporate fluff. No exclamation spam.
+If you know the visitor's first name, use it sparingly (1× every few messages), never overdo it.
 
-Purpose:
-- Guide people with calm precision. Simplify chaos. Design systems that flow.
-
-Personality:
-- Confident, minimal, human. No fluff. Helpful and direct.
-
-Style:
-- Short sentences. Elegant phrasing.
-- One thought → line break → next insight.
-- Offer an intro call naturally when appropriate.
+Style rules:
+- Short, human sentences. Natural rhythm.
+- If the question is broad, give a concise overview, then offer one smart next step.
+- If something is unclear, ask one crisp question.
+- If the user seems ready, gently offer to book a quick intro call (don’t push).
+- Prefer under ~120 words unless they ask for detail.
 
 Brand context:
-We design brands, websites, and automation systems that run quietly and smoothly in the background.
-Audience: small businesses, creatives, professionals who want cohesion and calm.
+We design brands, websites, and automation systems that run quietly in the background — smooth, calm, effective.
+Audience: small business owners, creatives, and professionals who want cohesion without chaos.
+
+Known info:
+- Booking link: ${BOOKING_URL || "(not set)"}.
+- If booking is useful, you may include the link once, at the end, in parentheses.
+- If you need contact details, ask for name + email in a single polite sentence.
+- If asked something not in FAQs, use good judgment and be honest about what you do know.
+
+${visitorName ? `Visitor’s first name: ${visitorName}` : ""}
 
 Relevant FAQs (may be empty):
-${faqContext || "(no strong FAQ matches)"}
-
-Rules:
-- If uncertain, say so and suggest a quick intro call.
-- Prefer <120 words unless detail is requested.
-- Never spam links; only share if asked or clearly useful.
+${faqContext || "(no strong FAQ matches)"} 
 `.trim();
 
     // default reply fallback
-    let replyText = `You said: ${userMsg}. Want me to book a quick intro call?`;
+    let replyText =
+      (visitorName ? `${visitorName}, ` : "") +
+      `happy to help. Want me to book a quick intro call so we can scope what you need${BOOKING_URL ? ` (${BOOKING_URL})` : ""}?`;
 
     if (openai) {
       const messages = [
@@ -229,29 +261,30 @@ Rules:
 
       const out = await openai.chat.completions.create({
         model: "gpt-4o-mini",
-        temperature: 0.6,
+        temperature: 0.7, // slightly warmer
         messages
       });
 
       replyText = out.choices?.[0]?.message?.content?.trim() || replyText;
     }
 
-    // update session memory
+    // update memory (keep it lean)
     appendHistory(sessionId, "user", userMsg);
     appendHistory(sessionId, "assistant", replyText);
 
-    // lead hint
+    // nudge email capture only when it makes sense
     const lead =
-      /book|call|pricing|quote|contact/i.test(userMsg)
+      /book|call|pricing|price|quote|contact|email|schedule|meeting/i.test(userMsg)
         ? { ask_email: true }
         : { ask_email: false };
 
     res.json({ reply: replyText, lead });
   } catch (err) {
     console.error("Error in /chat:", err);
-    res.status(500).json({ reply: "I hit a snag — mind trying again in a moment?" });
+    res.status(500).json({ reply: "Hmm — I hit a snag. Mind trying again in a moment?" });
   }
 });
+
 
 /* -------------------- Boot -------------------- */
 const PORT = process.env.PORT || 10000;
