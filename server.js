@@ -167,6 +167,15 @@ app.post("/lead", async (req, res) => {
       .normalize("NFKC")
       .replace(/[\u200B-\u200D\uFEFF]/g, "")
       .trim();
+      // ✅ Optional: remember name for this session if provided
+if (name) {
+  const sid = meta?.sessionId || "anon";
+  const p = profiles.get(sid) || {};
+  profiles.set(sid, { ...p, name });
+  console.log("✅ Saved name to profile memory:", sid, profiles.get(sid));
+
+}
+
 
     // Helpful logging to catch weird characters
     console.log("Lead email (raw chars):", Array.from(email).map(c => c.charCodeAt(0)));
@@ -205,6 +214,8 @@ app.post("/chat", async (req, res) => {
   try {
     const { message = "", meta = {}, sessionId = "anon" } = req.body || {};
     const userMsg = String(message || "").trim();
+    maybeLearnName(sessionId, userMsg);
+
     if (!userMsg) return res.json({ reply: "Say that again?" });
 
     // simple server-side analytics
