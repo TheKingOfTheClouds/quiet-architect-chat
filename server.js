@@ -15,7 +15,7 @@ const CONTACT_FORM_URL = process.env.CONTACT_FORM_URL || "";// e.g., Framer/Type
 const ZAPIER_HOOK_URL = process.env.ZAPIER_HOOK_URL || "";  // optional Zapier catch hook
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
-/* -------------------- CORS -------------------- */
+// ---- CORS ----
 const ORIGINS = (process.env.FRONTEND_ORIGIN || "")
   .split(",")
   .map(s => s.trim())
@@ -23,14 +23,13 @@ const ORIGINS = (process.env.FRONTEND_ORIGIN || "")
 
 app.use(cors({
   origin: (origin, cb) => {
-    // allow server-to-server & curl (no Origin)
-    if (!origin) return cb(null, true);
+    if (!origin) return cb(null, true); // server-to-server, curl, Postman
 
     try {
       const host = new URL(origin).hostname;
       const allowed =
-        /\.onrender\.com$/.test(host) ||  // allow Render previews
-        ORIGINS.includes(origin);         // allow your exact domains
+        /\.onrender\.com$/.test(host) ||
+        ORIGINS.includes(origin);
 
       return cb(null, allowed);
     } catch {
@@ -103,46 +102,27 @@ app.get("/config", (_req, res) => {
 /* -------------------- Lead capture (+ optional Zapier) -------------------- */
 app.post("/lead", async (req, res) => {
   try {
-    const { email = "", name = "", meta = {} } = req.body || {};
+    let { email = "", name = "", meta = {} } = req.body || {};
+    email = String(email).trim();          // <- normalize
+    name  = String(name || "").trim();
 
-    const cleanEmail = String(email).trim();          // ⟵ normalize
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail);
-
-    if (!isEmail) {
-      console.warn("❌ /lead invalid email:", JSON.stringify(email));
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ ok: false, error: "Invalid email" });
     }
 
-    console.log("📝 /lead received:", { name, email: cleanEmail, meta });
+    console.log("New lead:", { email, name, meta });
 
     if (ZAPIER_HOOK_URL) {
-      try {
-        const z = await fetch(ZAPIER_HOOK_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: String(name || "").trim(),
-            email: cleanEmail,
-            source: "aqa-widget",
-            meta,
-          }),
-        });
-        if (!z.ok) {
-          const text = await z.text().catch(() => "");
-          console.error("❌ Zapier responded", z.status, z.statusText, text);
-        } else {
-          console.log("✅ Zapier accepted lead");
-        }
-      } catch (e) {
-        console.error("❌ Error POSTing to Zapier:", e);
-      }
-    } else {
-      console.warn("⚠️  ZAPIER_HOOK_URL not set; skipping Zapier forwarding");
+      await fetch(ZAPIER_HOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, name, meta, source: "aqa-widget" })
+      });
     }
 
     return res.json({ ok: true });
   } catch (e) {
-    console.error("❌ /lead handler error:", e);
+    console.error("lead error:", e);
     res.status(500).json({ ok: false });
   }
 });
