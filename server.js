@@ -16,13 +16,31 @@ const ZAPIER_HOOK_URL = process.env.ZAPIER_HOOK_URL || "";  // optional Zapier c
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
 /* -------------------- CORS -------------------- */
+const ORIGINS = (process.env.FRONTEND_ORIGIN || "")
+  .split(",")
+  .map(s => s.trim())
+  .filter(Boolean); // e.g. "https://www.aquietarchitect.com, https://aquietarchitect.com"
+
 app.use(cors({
-  origin: FRONTEND_ORIGIN ? [FRONTEND_ORIGIN, /\.onrender\.com$/] : true,
+  origin: (origin, cb) => {
+    // allow server-to-server & curl (no Origin)
+    if (!origin) return cb(null, true);
+
+    try {
+      const host = new URL(origin).hostname;
+      const allowed =
+        /\.onrender\.com$/.test(host) ||  // allow Render previews
+        ORIGINS.includes(origin);         // allow your exact domains
+
+      return cb(null, allowed);
+    } catch {
+      return cb(null, false);
+    }
+  },
   methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type"],
 }));
 app.options("*", cors());
-app.use(bodyParser.json());
 
 /* -------------------- OpenAI -------------------- */
 const openai = OPENAI_API_KEY ? new OpenAI({ apiKey: OPENAI_API_KEY }) : null;
