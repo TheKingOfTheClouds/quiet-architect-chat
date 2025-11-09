@@ -105,20 +105,31 @@ function appendHistory(sessionId, role, content) {
   sessions.set(sessionId, arr.slice(-12)); // cap last ~12 messages
 }
 
-// Friendly profile memory (per session)
+// -------- Friendly profile memory (per session) --------
 const profiles = new Map(); // sessionId -> { name?: string }
 
-
-// Tiny name extractor: "I'm Dom", "I am Dominique", "My name is Jay", "this is Jay"
+// Learn a first name from common phrasings OR a single capitalized word
 function maybeLearnName(sessionId, text) {
-  const t = String(text || "");
-  const m =
-    t.match(/\b(?:i\s*['’]?\s*m|i\s*am|my\s+name\s+is)\s+([A-Z][a-z'-]{1,30})\b/) ||
-    t.match(/\b(?:this\s+is)\s+([A-Z][a-z'-]{1,30})\b/);
-  if (m && m[1]) {
-    const name = m[1].trim();
+  const t = String(text || "").trim();
+
+  // Patterns like: "I'm Dom", "I am Dominique", "my name is Jay", "this is Ana"
+  let m =
+    t.match(/\b(i\s*['’]?\s*m|i\s*am|my\s+name\s+is|this\s+is)\s+([A-Z][a-z'-]{1,30})\b/) ||
+    t.match(/\b(call\s+me)\s+([A-Z][a-z'-]{1,30})\b/);
+
+  // Fallback: a single capitalized token that *looks* like a name
+  if (!m) {
+    const single = t.match(/^[A-Z][a-z'-]{1,30}$/);
+    if (single) m = [, , single[0]]; // shape it like the 2-capture match above
+  }
+
+  if (m && m[2]) {
+    const name = m[2].trim();
     const p = profiles.get(sessionId) || {};
-    if (!p.name) profiles.set(sessionId, { ...p, name });
+    if (p.name !== name) {
+      profiles.set(sessionId, { ...p, name });
+      console.log("🟢 learned name", { sessionId, name });
+    }
   }
 }
 
@@ -126,7 +137,6 @@ function firstName(sessionId) {
   const p = profiles.get(sessionId);
   return p?.name || null;
 }
-
 
 /* -------------------- Health -------------------- */
 app.get("/", (_req, res) => {
@@ -218,23 +228,14 @@ app.post("/chat", async (req, res) => {
 
     if (!userMsg) return res.json({ reply: "Say that again?" });
 
-    // simple server-side analytics
-    console.log("Incoming:", { text: userMsg, path: meta?.path, referer: meta?.referer });
-
-    // pick relevant FAQs
-    const matches = topFaqs(userMsg, 4);
-    const faqContext = matches
-      .map((f, i) => `FAQ #${i + 1}\nQ: ${f.q}\nA: ${f.a}`)
-      .join("\n\n");
-
-   // Learn/recall the visitor's first name
-maybeLearnName(sessionId, userMsg);
-const visitorName = firstName(sessionId);
-
-
-if (/what'?s\s+my\s+name\??/i.test(userMsg)) {
+// If they ask about their name, answer directly
+if (/\b(what'?s|what is|do you remember)\s+my\s+name\b/i.test(userMsg)) {
   const n = visitorName;
-  return res.json({ reply: n ? `You told me your name is ${n}.` : `I don’t have it yet — want to share your name?` });
+  return res.json({
+    reply: n
+      ? `You told me your name is ${n}.`
+      : `I don't have it yet — want to share your name?`
+  });
 }
 
 
