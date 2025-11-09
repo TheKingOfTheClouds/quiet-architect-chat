@@ -300,33 +300,45 @@ ${faqContext || "(no strong FAQ matches)"}
 
       replyText = out.choices?.[0]?.message?.content?.trim() || replyText;
     }
-// --- Add hyperlink dynamically when appropriate ---
-const lower = userMsg.toLowerCase();
-const wantsBooking =
-  /(book|call|schedule|meeting|talk|chat)/i.test(lower) &&
-  (replyText.toLowerCase().includes("book") ||
-   replyText.toLowerCase().includes("call") ||
-   replyText.toLowerCase().includes("schedule"));
+// --- Normalize to exactly ONE booking link ---
+if (BOOKING_URL) {
+  const linkText = `[Schedule a call](${BOOKING_URL})`;
+  const host = (() => {
+    try { return new URL(BOOKING_URL).hostname.replace(/\./g, "\\."); } catch { return "cal\\.com"; }
+  })();
 
-if (BOOKING_URL && wantsBooking) {
-  // Clean duplicate brackets or existing Markdown
+  // 1) Remove any existing booking link variants (bracketed, raw, or extra parens)
+  //    • [anything](https://host/...)
+  //    • [https://host/...]
+  //    • https://host/...
+  const bookingMarkdownLink = new RegExp(`\\[[^\\]]*\\]\\((https?:\\/\\/(?:www\\.)?${host}[^)]*)\\)`, "gi");
+  const bracketedRaw = new RegExp(`\\[(https?:\\/\\/(?:www\\.)?${host}[^\\]]*)\\]`, "gi");
+  const rawUrl = new RegExp(`https?:\\/\\/(?:www\\.)?${host}[^\\s)\\]]*`, "gi");
+
   replyText = replyText
-    .replace(/\[+|\]+/g, "") // remove extra square brackets
-    .replace(/\(https?:\/\/[^\)]*\)/g, ""); // remove duplicate URLs
+    .replace(bookingMarkdownLink, "")
+    .replace(bracketedRaw, "")
+    .replace(rawUrl, "")
+    .replace(/\s{2,}/g, " ")             // collapse extra spaces
+    .replace(/ \.(?=\s|$)/g, ".");       // fix " ."
 
-  // Insert clean hyperlink version
-  if (!/\[Schedule a call\]/i.test(replyText)) {
-    replyText = replyText.replace(
-      /(schedule a call|book a (quick )?call|book a meeting)/i,
-      `[Schedule a call](${BOOKING_URL})`
-    );
-  }
+  // 2) If user intent suggests booking, try to inline-replace the phrase with the link
+  const lower = userMsg.toLowerCase();
+  const wantsBooking =
+    /(book|schedule|meeting|call|chat|talk)/i.test(lower) ||
+    /(book|schedule).* (call|meeting)/i.test(replyText);
 
-  // If link not found anywhere, append it neatly
-  if (!/\[Schedule a call\]\(/i.test(replyText)) {
-    replyText += ` You can [schedule a call](${BOOKING_URL}) when you’re ready.`;
+  if (wantsBooking) {
+    const phrase = /(schedule a call|book a (quick )?call|book a meeting)/i;
+    if (phrase.test(replyText)) {
+      replyText = replyText.replace(phrase, linkText);
+    } else if (!/\[Schedule a call\]\(/i.test(replyText)) {
+      // 3) Otherwise, append once — neatly.
+      replyText = `${replyText.trim()} You can ${linkText} when you’re ready.`;
+    }
   }
 }
+
 
 
     // update memory (keep it lean)
