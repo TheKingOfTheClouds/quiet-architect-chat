@@ -104,29 +104,49 @@ app.get("/config", (_req, res) => {
 app.post("/lead", async (req, res) => {
   try {
     const { email = "", name = "", meta = {} } = req.body || {};
-    // basic email guard
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+
+    const cleanEmail = String(email).trim();          // ⟵ normalize
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail);
+
+    if (!isEmail) {
+      console.warn("❌ /lead invalid email:", JSON.stringify(email));
       return res.status(400).json({ ok: false, error: "Invalid email" });
     }
 
-    // Log locally or persist if you add a DB later
-    console.log("New lead:", { email, name, meta });
+    console.log("📝 /lead received:", { name, email: cleanEmail, meta });
 
-    // Optional: forward to Zapier
     if (ZAPIER_HOOK_URL) {
-      await fetch(ZAPIER_HOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, name, meta, source: "aqa-widget" })
-      });
+      try {
+        const z = await fetch(ZAPIER_HOOK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: String(name || "").trim(),
+            email: cleanEmail,
+            source: "aqa-widget",
+            meta,
+          }),
+        });
+        if (!z.ok) {
+          const text = await z.text().catch(() => "");
+          console.error("❌ Zapier responded", z.status, z.statusText, text);
+        } else {
+          console.log("✅ Zapier accepted lead");
+        }
+      } catch (e) {
+        console.error("❌ Error POSTing to Zapier:", e);
+      }
+    } else {
+      console.warn("⚠️  ZAPIER_HOOK_URL not set; skipping Zapier forwarding");
     }
 
     return res.json({ ok: true });
   } catch (e) {
-    console.error("lead error:", e);
+    console.error("❌ /lead handler error:", e);
     res.status(500).json({ ok: false });
   }
 });
+
 
 /* -------------------- Chat -------------------- */
 app.post("/chat", async (req, res) => {
