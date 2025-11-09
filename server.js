@@ -103,21 +103,43 @@ app.get("/config", (_req, res) => {
 app.post("/lead", async (req, res) => {
   try {
     let { email = "", name = "", meta = {} } = req.body || {};
-    email = String(email).trim();          // <- normalize
-    name  = String(name || "").trim();
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ ok: false, error: "Invalid email" });
+    // Normalize & scrub common invisible/hard-to-see chars
+    email = String(email)
+      .normalize("NFKC")
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")  // zero width
+      .replace(/\u00A0/g, " ")               // non-breaking space
+      .replace(/[<>]/g, "")                  // angle brackets
+      .trim();
+
+    name  = String(name || "")
+      .normalize("NFKC")
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .trim();
+
+    // Helpful logging to catch weird characters
+    console.log("Lead email (raw chars):", Array.from(email).map(c => c.charCodeAt(0)));
+
+    // Slightly more tolerant email check (still safe)
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(email);
+    if (!emailOk) {
+      return res.status(400).json({ ok: false, error: "Invalid email", debug: email });
     }
 
     console.log("New lead:", { email, name, meta });
 
     if (ZAPIER_HOOK_URL) {
-      await fetch(ZAPIER_HOOK_URL, {
+      const z = await fetch(ZAPIER_HOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, name, meta, source: "aqa-widget" })
       });
+      if (!z.ok) {
+        const text = await z.text().catch(() => "");
+        console.error("Zapier responded", z.status, z.statusText, text);
+      } else {
+        console.log("Zapier accepted lead");
+      }
     }
 
     return res.json({ ok: true });
@@ -126,7 +148,6 @@ app.post("/lead", async (req, res) => {
     res.status(500).json({ ok: false });
   }
 });
-
 
 /* -------------------- Chat -------------------- */
 app.post("/chat", async (req, res) => {

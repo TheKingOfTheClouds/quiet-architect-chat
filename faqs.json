@@ -55,4 +55,34 @@
     "q": "Do I need to know how to code to use this?",
     "a": "Not at all. Everything we build runs automatically behind the scenes. You’ll have full control without ever touching code."
   }
+  
+  {
+    "q": "What’s included in the automation plan?",
+    "a": "Workflow automation, AI assistant setup, performance analytics, and ongoing support. Higher tiers can include sales automations, marketing flows, and integrations."
+  },
+  {
+    "q": "Do you build the full website?",
+    "a": "Yes — we build directly in Framer so your site, automations, and analytics all live in one place."
+  },
+  {
+    "q": "What’s the setup fee for?",
+    "a": "Initial system design, full automation build-out, and training so your workflows and integrations launch ready to perform."
+  },
+  {
+    "q": "Quarterly retainer?",
+    "a": "Ongoing optimization, updates, and new automations as your business grows."
+  },
+  {
+    "q": "Can I add new features later?",
+    "a": "Yes — through a retainer or custom quote whenever you’re ready."
+  },
+  {
+    "q": "Photography specials",
+    "a": "Seasonal packages are available (brand shoots, product, and lifestyle). Ask for current dates and availability."
+  },
+  {
+    "q": "Pricing",
+    "a": "Plans are scoped by business needs. Typical projects start with a setup fee and a monthly retainer. Ask for a tailored quote."
+  }
 ]
+
