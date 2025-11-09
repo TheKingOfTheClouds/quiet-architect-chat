@@ -201,34 +201,15 @@ app.post("/lead", async (req, res) => {
   }
 });
 
-/* -------------------- Chat (friendly, personal) -------------------- */
+/* -------------------- Chat -------------------- */
 app.post("/chat", async (req, res) => {
   try {
     const { message = "", meta = {}, sessionId = "anon" } = req.body || {};
     const userMsg = String(message || "").trim();
     if (!userMsg) return res.json({ reply: "Say that again?" });
 
-    // --- Small talk / quick replies (before FAQs/LLM) ---
-const smallTalk = [
-  [/^hi$|^hey$|^hello$/i, "Hey! 👋 What are you building?"],
-  [/how are you/i, "Doing great — shipping quietly. What can I help with?"],
-  [/thank(s| you)/i, "Anytime! Want me to book a quick intro call?"],
-  [/bye|goodbye|see ya/i, "Catch you later! If you want, I can book a quick intro call."]
-];
-
-for (const [re, text] of smallTalk) {
-  if (re.test(userMsg)) {
-    return res.json({ reply: text, lead: { ask_email: false } });
-  }
-}
-
-
-    // learn name if they tell us
-    maybeLearnName(sessionId, userMsg);
-    const visitorName = firstName(sessionId);
-
-    // light analytics
-    console.log("Incoming:", { text: userMsg, path: meta?.path, referer: meta?.referer, visitorName });
+    // simple server-side analytics
+    console.log("Incoming:", { text: userMsg, path: meta?.path, referer: meta?.referer });
 
     // pick relevant FAQs
     const matches = topFaqs(userMsg, 4);
@@ -236,115 +217,94 @@ for (const [re, text] of smallTalk) {
       .map((f, i) => `FAQ #${i + 1}\nQ: ${f.q}\nA: ${f.a}`)
       .join("\n\n");
 
-    // conversation history (short)
-    const history = (sessions.get(sessionId) || []).map(h => ({
-      role: h.role, content: h.content
-    }));
+    // (optional) pull visitor name we may have captured this session
+    const profiles = new Map(); // if you have a profiles map, wire it up here
+    const getFirstNameFromSession = (sid) => {
+      const p = profiles.get(sid);
+      return p?.name || null;
+    };
+    const visitorName = getFirstNameFromSession(sessionId);
 
-    // Voice & behavior
+    // brand voice / prompt
     const systemPrompt = `
-You are "Architect" — a friendly teammate and conversational guide for *A Quiet Architect*.
-
-Your role:
-- Help visitors clearly, calmly, and confidently — like a human who enjoys good conversations.
-- Speak naturally. Use contractions, warmth, and personality, but never overdo it.
-- You’re not a sales rep; you’re a calm, reliable teammate helping them find clarity.
-
-Tone:
-- Warm, curious, and easygoing — the kind of person who listens well.
-- Short, clear sentences. Natural rhythm. Use emojis lightly when they help tone (🙂, 👋, 💡).
-- Never sound robotic or formal. No filler like “as an AI” or “as an assistant.”
-
-Conversation flow:
-1. Acknowledge what they said in a natural way (e.g., “Good question,” “That’s a smart one,” “Yeah, totally get that.”)
-2. Give a simple, grounded answer or insight.
-3. Offer one thoughtful next step — not pushy, just helpful.
-4. If they seem curious about services or details, suggest a quick intro call and include the booking link once:
-   (${BOOKING_URL || "(booking link not set)"}).
-
-Context:
-We design brands, websites, and automation systems that run quietly in the background — smooth, minimal, and effective.
-Our audience: small business owners, creatives, and professionals who want clarity, consistency, and calm systems.
-
-Guidelines:
-- Keep replies under 100–120 words unless they ask for more detail.
-- If something’s unclear, ask one precise, friendly question.
-- If the topic is outside scope, just say so naturally and pivot to booking a call.
-- Never oversell — just be real and helpful.
-- If you know the visitor’s name, use it naturally once in a while (never overuse).
-
+You are "Architect," a friendly teammate for A Quiet Architect.
+Be warm, casual, and confident; avoid corporate fluff and over-exclamation.
+Use short human sentences. If unclear, ask one crisp question.
+If a call would help, you can offer it gently.
+Known:
+- Booking link: ${BOOKING_URL || "(not set)"}.
+- Ask for name + email together only if needed.
 ${visitorName ? `Visitor’s first name: ${visitorName}` : ""}
-
 Relevant FAQs (may be empty):
 ${faqContext || "(no strong FAQ matches)"}
 `.trim();
 
-
     // default reply fallback
     let replyText =
       (visitorName ? `${visitorName}, ` : "") +
-      `happy to help. Want me to book a quick intro call so we can scope what you need${BOOKING_URL ? ` (${BOOKING_URL})` : ""}?`;
+      `happy to help. Want me to book a quick intro call so we can scope what you need${
+        BOOKING_URL ? ` (you can [schedule a call](${BOOKING_URL}))` : ""
+      }?`;
 
+    // call OpenAI if configured
     if (openai) {
       const messages = [
         { role: "system", content: systemPrompt },
-        ...history,
         { role: "user", content: userMsg },
       ];
-
       const out = await openai.chat.completions.create({
         model: "gpt-4o-mini",
-        temperature: 0.7, // slightly warmer
-        messages
+        temperature: 0.7,
+        messages,
       });
-
       replyText = out.choices?.[0]?.message?.content?.trim() || replyText;
-      
-// --- Booking link cleanup + smart insertion ---
-if (BOOKING_URL) {
-  const linkText = `[schedule a call](${BOOKING_URL})`;
-  const hostEsc = (() => {
-    try { return new URL(BOOKING_URL).hostname.replace(/\./g, "\\."); }
-    catch { return "cal\\.com"; }
-  })();
-
-  // Remove any existing link variants (markdown, parens, raw)
-  const bookingMarkdown = new RegExp(`\\[[^\\]]*\\]\\((https?:\\/\\/(?:www\\.)?${hostEsc}[^)]*)\\)`, "gi");
-  const parenUrl = new RegExp(`\\((https?:\\/\\/(?:www\\.)?${hostEsc}[^)]*)\\)`, "gi");
-  const rawUrl = new RegExp(`https?:\\/\\/(?:www\\.)?${hostEsc}[^\\s\\]]*`, "gi");
-
-  replyText = (replyText || "")
-    .replace(bookingMarkdown, "")
-    .replace(parenUrl, "")
-    .replace(rawUrl, "")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-
-  // Detect if user intent = booking or call
-  const lower = (userMsg || "").toLowerCase();
-  const wantsBooking =
-    /(book|schedule|meeting|call|chat|talk)/i.test(lower) ||
-    /(book|schedule).*(call|meeting)/i.test(replyText);
-
-  if (wantsBooking) {
-    const phrase = /(schedule a call|book a (quick )?call|book a meeting)/i;
-
-    if (phrase.test(replyText)) {
-      // Inline replacement for "schedule a call"
-      replyText = replyText.replace(phrase, linkText);
-    } else if (!/\[[^\]]+\]\(https?:\/\/.*\)/.test(replyText)) {
-      // Otherwise append once neatly
-      replyText = replyText.replace(/[.:!?]+$/, ""); // tidy punctuation
-      replyText += `. You can ${linkText} 😊`;
     }
-  }
-}
 
-// --- Update memory (keep it lean) ---
-appendHistory(sessionId, "user", userMsg);
-appendHistory(sessionId, "assistant", replyText);
+    // --- Booking link cleanup + smart insertion ---
+    if (BOOKING_URL) {
+      const linkText = `[schedule a call](${BOOKING_URL})`;
+      const hostEsc = (() => {
+        try { return new URL(BOOKING_URL).hostname.replace(/\./g, "\\."); }
+        catch { return "cal\\.com"; }
+      })();
 
-    // nudge email capture only when it makes sense
+      // Remove any existing booking link variants (markdown, parens, raw)
+      const bookingMarkdown = new RegExp(`\\[[^\\]]*\\]\\((https?:\\/\\/(?:www\\.)?${hostEsc}[^)]*)\\)`, "gi");
+      const parenUrl        = new RegExp(`\\((https?:\\/\\/(?:www\\.)?${hostEsc}[^)]*)\\)`, "gi");
+      const rawUrl          = new RegExp(`https?:\\/\\/(?:www\\.)?${hostEsc}[^\\s\\]]*`, "gi");
+
+      replyText = (replyText || "")
+        .replace(bookingMarkdown, "")
+        .replace(parenUrl, "")
+        .replace(rawUrl, "")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+
+      // Detect if user intent = booking or call
+      const lower        = (userMsg || "").toLowerCase();
+      const wantsBooking =
+        /(book|schedule|meeting|call|chat|talk)/i.test(lower) ||
+        /(book|schedule).*(call|meeting)/i.test(replyText);
+
+      if (wantsBooking) {
+        const phrase = /(schedule a call|book a (quick )?call|book a meeting)/i;
+
+        if (phrase.test(replyText)) {
+          // Inline replacement for the phrase with a clickable link
+          replyText = replyText.replace(phrase, linkText);
+        } else if (!/\[[^\]]+\]\(https?:\/\/.*\)/.test(replyText)) {
+          // Otherwise append one neat link if none exists yet
+          replyText = replyText.replace(/[.:!?]+$/, "");
+          replyText += `. You can ${linkText} 😊`;
+        }
+      }
+    }
+
+    // --- Update memory (keep it lean) ---
+    appendHistory(sessionId, "user", userMsg);
+    appendHistory(sessionId, "assistant", replyText);
+
+    // --- Nudge email capture only when it makes sense ---
     const lead =
       /book|call|pricing|price|quote|contact|email|schedule|meeting/i.test(userMsg)
         ? { ask_email: true }
@@ -356,6 +316,8 @@ appendHistory(sessionId, "assistant", replyText);
     res.status(500).json({ reply: "Hmm — I hit a snag. Mind trying again in a moment?" });
   }
 });
+
+
 
 
 /* -------------------- Boot -------------------- */
