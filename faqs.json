@@ -82,6 +82,35 @@
   {
     "q": "Pricing",
     "a": "Plans are scoped by business needs. Typical projects start with a setup fee and a monthly retainer. Ask for a tailored quote."
+  },
+  
+  {
+
+    "q": "What plans do you offer?",
+    "a": "We offer three automation tiers — Starter ($88/mo), Professional ($188/mo), and Enterprise ($488+/mo). Each tier scales with your business needs, automation depth, and level of support."
+  },
+  {
+    "q": "What’s included in the Starter plan?",
+    "a": "The Starter plan is $88/month or $898/year. It’s ideal for solo founders and small teams. Includes foundational workflow automation, AI-assisted workflows, basic analytics and reporting, email support with AI-assisted chat responses, and up to 3 AI integrations."
+  },
+  {
+    "q": "What’s included in the Professional plan?",
+    "a": "The Professional plan is $188/month or $1,917/year. It adds advanced workflow automation, AI-driven sales and marketing tools, enhanced analytics and insights, priority customer support, and up to 10 AI integrations. It’s our most popular plan."
+  },
+  {
+    "q": "What’s included in the Enterprise plan?",
+    "a": "Enterprise is custom starting at $488+/month or $4,978+/year. It offers fully customizable AI architecture, a dedicated automation strategist and consultant, enterprise-grade compliance and data security, 24/7 VIP support, and unlimited automations and integrations."
+  },
+  {
+    "q": "Do you offer any visual branding packages?",
+    "a": "Yes — our Visual Launch Package provides tailored photo sessions for your website, automations, and marketing content. We help you present your brand with cohesive visuals across all channels."
+  },
+  {
+    "q": "How can I schedule a call or get started?",
+    "a": "You can schedule a call directly through the chat, or by visiting our contact page. Architect can also share the booking link if you ask to 'book a call' or 'schedule a meeting'."
   }
 ]
+
+
+
 
