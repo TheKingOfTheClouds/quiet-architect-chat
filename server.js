@@ -230,6 +230,29 @@ app.post("/chat", async (req, res) => {
     maybeLearnName(sessionId, userMsg);
     const visitorName = firstName(sessionId);
 
+// --- Fast path: user says "yes" after we offered a call ---
+const history = sessions.get(sessionId) || [];
+const lastAssistant = [...history].reverse().find(m => m.role === "assistant")?.content || "";
+
+const offeredBooking = /schedule a call|book a (quick )?call|book a meeting/i.test(lastAssistant);
+const userAffirmed   = /\b(yes|yep|yeah|sure|ok|okay|sounds good|let'?s do it|lets do it)\b/i.test(userMsg);
+
+if (BOOKING_URL && offeredBooking && userAffirmed) {
+  const linkText = `[schedule a call](${BOOKING_URL})`;
+  const replyText = `Perfect — let’s lock a time. You can ${linkText}. If you’d rather drop your email, I can send an invite too.`;
+
+  appendHistory(sessionId, "user", userMsg);
+  appendHistory(sessionId, "assistant", replyText);
+
+  return res.json({
+    reply: replyText,
+    lead: { ask_email: true }
+  });
+}
+
+
+    
+
     // Simple server-side analytics
     console.log("Incoming:", { text: userMsg, path: meta?.path, referer: meta?.referer });
 
