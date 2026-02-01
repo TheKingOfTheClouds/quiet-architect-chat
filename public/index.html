@@ -1,0 +1,124 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>A Quiet Architect – Chat Test</title>
+
+    <style>
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #f7f7f7;
+        padding: 20px;
+      }
+
+      #qa-chat {
+        max-width: 420px;
+        margin: 0 auto;
+      }
+
+      .qa-header {
+        font-weight: 700;
+        margin-bottom: 10px;
+        font-size: 18px;
+      }
+
+      .qa-feed {
+        border: 1px solid #ddd;
+        background: #fff;
+        padding: 10px;
+        height: 320px;
+        overflow-y: auto;
+        border-radius: 8px;
+      }
+
+      .qa-msg {
+        margin: 8px 0;
+        padding: 8px 10px;
+        border-radius: 10px;
+        max-width: 90%;
+        font-size: 14px;
+      }
+
+      .qa-bot {
+        background: #f2f2f2;
+      }
+
+      .qa-user {
+        background: #e8f0ff;
+        margin-left: auto;
+      }
+
+      .qa-chips {
+        display: flex;
+        gap: 8px;
+        margin: 12px 0;
+        flex-wrap: wrap;
+      }
+
+      .qa-chip {
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid #333;
+        background: #fff;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .qa-chip:hover {
+        background: #111;
+        color: #fff;
+      }
+
+      .qa-input-wrap {
+        display: flex;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .qa-input {
+        flex: 1;
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+      }
+
+      .qa-btn {
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: none;
+        background: #111;
+        color: #fff;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .qa-lead-wrap {
+        border: 1px dashed #ccc;
+        padding: 10px;
+        border-radius: 8px;
+        margin-top: 10px;
+      }
+
+      .qa-lead-label {
+        font-size: 12px;
+        margin-top: 8px;
+      }
+
+      .qa-lead-reason {
+        font-size: 13px;
+        margin-bottom: 8px;
+      }
+
+      textarea.qa-input {
+        resize: vertical;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="qa-chat"></div>
+    <script src="/widget.js"></script>
+  </body>
+</html>

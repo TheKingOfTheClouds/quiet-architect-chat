@@ -1,67 +1,186 @@
-(function () {
-  const API = "https://quiet-architect-chat.onrender.com";
+(() => {
+  const root = document.getElementById("qa-chat");
+  if (!root) return;
 
-  /* ---------- Bubble ---------- */
-  const bubble = document.createElement("button");
-  bubble.textContent = "💬";
-  bubble.style.cssText =
-    "position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:50%;background:#121212;color:#fff;border:1px solid rgba(255,255,255,.1);cursor:pointer;z-index:9999";
-  document.body.appendChild(bubble);
+  const params = new URLSearchParams(window.location.search);
+  const API_BASE = params.get("apiBase") || ""; // leave blank if same host
 
-  /* ---------- Panel ---------- */
-  const panel = document.createElement("div");
-  panel.style.cssText =
-    "position:fixed;right:20px;bottom:86px;width:360px;max-width:92vw;max-height:70vh;background:#121212;color:#eee;border-radius:16px;border:1px solid rgba(255,255,255,.1);display:none;flex-direction:column;z-index:9999";
-
-  panel.innerHTML = `
-    <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,.1);font-weight:700">
-      A Quiet Architect
-    </div>
-    <div id="aqa-log" style="padding:12px;overflow:auto;flex:1;font-size:14px"></div>
-    <div style="padding:10px;border-top:1px solid rgba(255,255,255,.1);display:flex;gap:8px">
-      <button data-id="LEARN">Learn</button>
-      <button data-id="QUOTE">Get a quote</button>
-    </div>
-  `;
-  document.body.appendChild(panel);
-
-  /* ---------- Toggle ---------- */
-  bubble.onclick = () => {
-    panel.style.display = panel.style.display === "flex" ? "none" : "flex";
+  const state = {
+    config: null,
+    threadId: crypto.randomUUID(),
+    messages: [],
+    chips: [],
   };
 
-  /* ---------- Messaging ---------- */
-  async function send(intent) {
-    const res = await fetch(API + "/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ intent, sessionId: "web" })
+  function el(tag, cls, text) {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text != null) n.textContent = text;
+    return n;
+  }
+
+  async function api(path, body) {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: body ? "POST" : "GET",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
     });
-    const data = await res.json();
+    return res.json();
+  }
 
-    const log = document.getElementById("aqa-log");
-    log.innerHTML += `<p>${data.reply}</p>`;
+  function push(role, content) {
+    state.messages.push({ role, content, ts: Date.now() });
+    render();
+  }
 
-    // Replace buttons if chips returned
-    if (data.chips && data.chips.length) {
-      const footer = panel.querySelector("div:last-child");
-      footer.innerHTML = "";
-      data.chips.forEach(c => {
-        const b = document.createElement("button");
-        b.textContent = c.label;
-        b.onclick = () => send(c.id);
-        footer.appendChild(b);
-      });
+  async function sendIntent(intent) {
+    const res = await api("/chat", { intent });
+    if (res?.reply) push("bot", res.reply);
+    if (res?.chips) state.chips = res.chips;
+
+    if (res?.action) handleAction(res.action);
+
+    render();
+  }
+
+  async function sendMessage(message) {
+    push("user", message);
+    const res = await api("/chat", { message });
+    if (res?.reply) push("bot", res.reply);
+    if (res?.chips) state.chips = res.chips;
+
+    if (res?.action) handleAction(res.action);
+
+    render();
+  }
+
+  function handleAction(action) {
+    if (!action || !action.type) return;
+
+    if (action.type === "open_url" && action.url) {
+      window.open(action.url, "_blank", "noopener,noreferrer");
+      return;
     }
 
-    // Open URLs if instructed
-    if (data.action && data.action.type === "open_url") {
-      window.open(data.action.url, "_blank");
+    if (action.type === "lead_form") {
+      push("lead_form", action);
+      return;
     }
   }
 
-  panel.querySelectorAll("button[data-id]").forEach(btn => {
-    btn.onclick = () => send(btn.dataset.id);
-  });
+  async function submitLead(data) {
+    const res = await api("/lead", {
+      ...data,
+      threadId: state.threadId,
+      pageUrl: window.location.href,
+      businessName: state.config?.businessName || "",
+      city: state.config?.city || "",
+      source: "chat_widget",
+    });
 
+    if (res?.ok) push("bot", "Locked in. We’ll follow up ASAP.");
+    else push("bot", "Something went wrong sending that. Try again.");
+  }
+
+  function renderLeadForm(action) {
+    const wrap = el("div", "qa-lead-wrap");
+
+    if (action.reason) wrap.appendChild(el("div", "qa-lead-reason", action.reason));
+
+    const fields = action.fields || [];
+    const inputs = {};
+
+    fields.forEach((f) => {
+      const label = el("div", "qa-lead-label", f.label + (f.required ? " *" : ""));
+      wrap.appendChild(label);
+
+      const input = f.multiline
+        ? Object.assign(el("textarea", "qa-input"), { rows: 3 })
+        : Object.assign(el("input", "qa-input"), { type: "text" });
+
+      input.placeholder = f.label;
+      inputs[f.id] = { def: f, input };
+      wrap.appendChild(input);
+    });
+
+    const btn = el("button", "qa-btn", "Send");
+    btn.addEventListener("click", async () => {
+      const payload = {};
+      for (const [id, obj] of Object.entries(inputs)) {
+        const val = String(obj.input.value || "").trim();
+        if (obj.def.required && !val) {
+          obj.input.focus();
+          return;
+        }
+        payload[id] = val;
+      }
+      await submitLead(payload);
+    });
+
+    wrap.appendChild(btn);
+    return wrap;
+  }
+
+  function render() {
+    root.innerHTML = "";
+
+    const header = el("div", "qa-header", state.config?.businessName || "Chat");
+    const feed = el("div", "qa-feed");
+
+    state.messages.forEach((m) => {
+      if (m.role === "lead_form") {
+        feed.appendChild(renderLeadForm(m.content));
+        return;
+      }
+      const cls =
+        m.role === "user" ? "qa-msg qa-user" : m.role === "bot" ? "qa-msg qa-bot" : "qa-msg";
+      feed.appendChild(el("div", cls, m.content));
+    });
+
+    const chipsWrap = el("div", "qa-chips");
+    (state.chips || []).forEach((c) => {
+      const b = el("button", "qa-chip", c.label);
+      b.addEventListener("click", () => sendIntent(c.id));
+      chipsWrap.appendChild(b);
+    });
+
+    // OPTIONAL: typing box. Keep it simple.
+    const inputWrap = el("div", "qa-input-wrap");
+    const input = el("input", "qa-input");
+    input.placeholder = "Type here (or choose a button)…";
+
+    const sendBtn = el("button", "qa-btn", "Send");
+    sendBtn.addEventListener("click", () => {
+      const v = input.value.trim();
+      if (!v) return;
+      sendMessage(v);
+      input.value = "";
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const v = input.value.trim();
+        if (!v) return;
+        sendMessage(v);
+        input.value = "";
+      }
+    });
+
+    inputWrap.appendChild(input);
+    inputWrap.appendChild(sendBtn);
+
+    root.appendChild(header);
+    root.appendChild(feed);
+    root.appendChild(chipsWrap);
+    root.appendChild(inputWrap);
+
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  (async function init() {
+    state.config = await api(`/config?${params.toString()}`);
+    state.chips = state.config?.chips || [];
+    state.messages = [];
+    push("bot", "How can I help today?");
+  })();
 })();
