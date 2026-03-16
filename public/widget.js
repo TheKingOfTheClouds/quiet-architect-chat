@@ -1,186 +1,278 @@
 (() => {
-  const root = document.getElementById("qa-chat");
-  if (!root) return;
+  const API_BASE = "https://quiet-architect-chat.onrender.com";
 
-  const params = new URLSearchParams(window.location.search);
-  const API_BASE = params.get("apiBase") || ""; // leave blank if same host
+  if (document.querySelector(".aqa-bubble")) return;
 
-  const state = {
-    config: null,
-    threadId: crypto.randomUUID(),
-    messages: [],
-    chips: [],
-  };
+  const FAQ_CHIPS = [
+    { id: "FAQ_AUTOMATION", label: "Automation Plan" },
+    { id: "FAQ_WEBSITE", label: "Website Builds" },
+    { id: "FAQ_SETUP", label: "Setup Fee" },
+    { id: "FAQ_FEATURES", label: "Add Features" },
+    { id: "FAQ_TIME", label: "Setup Time" }
+  ];
 
-  function el(tag, cls, text) {
-    const n = document.createElement(tag);
-    if (cls) n.className = cls;
-    if (text != null) n.textContent = text;
-    return n;
+  const style = document.createElement("style");
+  style.textContent = `
+    :root{
+      --aqa-bg: rgba(18,18,18,.96);
+      --aqa-fg: #eaeaea;
+      --aqa-muted: #a1a1a1;
+      --aqa-accent: #c9f31d;
+      --aqa-radius: 18px;
+      --aqa-shadow: 0 10px 30px rgba(0,0,0,.45);
+      --aqa-z: 9999;
+    }
+
+    .aqa-bubble{
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: var(--aqa-bg);
+      color: var(--aqa-fg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: var(--aqa-shadow);
+      z-index: var(--aqa-z);
+      border: 1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .aqa-card{
+      position: fixed;
+      right: 20px;
+      bottom: 90px;
+      width: min(360px, 92vw);
+      max-height: 70vh;
+      background: var(--aqa-bg);
+      color: var(--aqa-fg);
+      border-radius: var(--aqa-radius);
+      box-shadow: var(--aqa-shadow);
+      border: 1px solid rgba(255,255,255,.08);
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: var(--aqa-z);
+    }
+
+    .aqa-card.open{
+      display: flex;
+    }
+
+    .aqa-head{
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+
+    .aqa-dot{
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--aqa-accent);
+      box-shadow: 0 0 12px var(--aqa-accent);
+      flex: 0 0 auto;
+    }
+
+    .aqa-title{
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .aqa-body{
+      padding: 14px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .aqa-msg{
+      margin: 0 0 12px 0;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .aqa-msg.user{
+      color: var(--aqa-accent);
+    }
+
+    .aqa-chipwrap{
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .aqa-chip{
+      font-size: 12px;
+      padding: 7px 11px;
+      border-radius: 999px;
+      background: #1e1e1e;
+      border: 1px solid rgba(255,255,255,.08);
+      color: var(--aqa-fg);
+      cursor: pointer;
+      transition: background .15s ease, transform .15s ease;
+    }
+
+    .aqa-chip:hover{
+      background: #2a2a2a;
+      transform: translateY(-1px);
+    }
+
+    .aqa-chip:disabled{
+      opacity: .65;
+      cursor: default;
+      transform: none;
+    }
+
+    .aqa-input{
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+
+    .aqa-input input{
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.08);
+      background: #111;
+      color: var(--aqa-fg);
+      outline: none;
+    }
+
+    .aqa-btn{
+      padding: 10px 14px;
+      border-radius: 10px;
+      background: #1c1c1c;
+      border: 1px solid rgba(255,255,255,.08);
+      color: var(--aqa-fg);
+      cursor: pointer;
+    }
+
+    @media (max-width: 480px){
+      .aqa-bubble{
+        right: 14px;
+        bottom: 14px;
+      }
+
+      .aqa-card{
+        right: 14px;
+        bottom: 82px;
+        width: calc(100vw - 28px);
+      }
+    }
+  `;
+  document.head.appendChild(style);
+
+  const bubble = document.createElement("button");
+  bubble.className = "aqa-bubble";
+  bubble.type = "button";
+  bubble.setAttribute("aria-label", "Open chat");
+  bubble.innerHTML = "💬";
+
+  const card = document.createElement("div");
+  card.className = "aqa-card";
+  card.innerHTML = `
+    <div class="aqa-head">
+      <div class="aqa-dot"></div>
+      <div class="aqa-title">A Quiet Architect</div>
+    </div>
+    <div class="aqa-body" id="aqa-body">
+      <div class="aqa-msg">How can I help today?</div>
+      <div class="aqa-chipwrap" id="aqa-chips"></div>
+    </div>
+    <div class="aqa-input">
+      <input id="aqa-input" type="text" placeholder="Ask something..." />
+      <button class="aqa-btn" id="aqa-send" type="button">Send</button>
+    </div>
+  `;
+
+  document.body.appendChild(bubble);
+  document.body.appendChild(card);
+
+  const bodyEl = card.querySelector("#aqa-body");
+  const chipsEl = card.querySelector("#aqa-chips");
+  const inputEl = card.querySelector("#aqa-input");
+  const sendBtn = card.querySelector("#aqa-send");
+
+  function appendMessage(text, className = "") {
+    const msg = document.createElement("div");
+    msg.className = `aqa-msg ${className}`.trim();
+    msg.textContent = text;
+    bodyEl.appendChild(msg);
+    bodyEl.scrollTop = bodyEl.scrollHeight;
+  }
+
+  function renderChips() {
+    chipsEl.innerHTML = "";
+
+    FAQ_CHIPS.forEach((chip) => {
+      const btn = document.createElement("button");
+      btn.className = "aqa-chip";
+      btn.type = "button";
+      btn.textContent = chip.label;
+
+      btn.addEventListener("click", async () => {
+        appendMessage(chip.label, "user");
+        await sendIntent(chip.id);
+      });
+
+      chipsEl.appendChild(btn);
+    });
   }
 
   async function api(path, body) {
     const res = await fetch(`${API_BASE}${path}`, {
       method: body ? "POST" : "GET",
-      headers: body ? { "Content-Type": "application/json" } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
+      headers: body ? { "Content-Type": "application/json" } : {},
+      body: body ? JSON.stringify(body) : undefined
     });
+
+    if (!res.ok) {
+      throw new Error(`Request failed: ${res.status}`);
+    }
+
     return res.json();
   }
 
-  function push(role, content) {
-    state.messages.push({ role, content, ts: Date.now() });
-    render();
-  }
-
   async function sendIntent(intent) {
-    const res = await api("/chat", { intent });
-    if (res?.reply) push("bot", res.reply);
-    if (res?.chips) state.chips = res.chips;
-
-    if (res?.action) handleAction(res.action);
-
-    render();
-  }
-
-  async function sendMessage(message) {
-    push("user", message);
-    const res = await api("/chat", { message });
-    if (res?.reply) push("bot", res.reply);
-    if (res?.chips) state.chips = res.chips;
-
-    if (res?.action) handleAction(res.action);
-
-    render();
-  }
-
-  function handleAction(action) {
-    if (!action || !action.type) return;
-
-    if (action.type === "open_url" && action.url) {
-      window.open(action.url, "_blank", "noopener,noreferrer");
-      return;
-    }
-
-    if (action.type === "lead_form") {
-      push("lead_form", action);
-      return;
+    try {
+      const data = await api("/chat", { intent });
+      appendMessage(data.reply || "No reply returned.");
+    } catch (err) {
+      appendMessage("Something went wrong connecting to chat.");
+      console.error("AQA intent error:", err);
     }
   }
 
-  async function submitLead(data) {
-    const res = await api("/lead", {
-      ...data,
-      threadId: state.threadId,
-      pageUrl: window.location.href,
-      businessName: state.config?.businessName || "",
-      city: state.config?.city || "",
-      source: "chat_widget",
-    });
+  function sendMessage() {
+    const text = inputEl.value.trim();
+    if (!text) return;
 
-    if (res?.ok) push("bot", "Locked in. We’ll follow up ASAP.");
-    else push("bot", "Something went wrong sending that. Try again.");
+    appendMessage(text, "user");
+    inputEl.value = "";
+    appendMessage("Please use one of the quick question buttons below for now.");
   }
 
-  function renderLeadForm(action) {
-    const wrap = el("div", "qa-lead-wrap");
+  bubble.addEventListener("click", () => {
+    card.classList.toggle("open");
+  });
 
-    if (action.reason) wrap.appendChild(el("div", "qa-lead-reason", action.reason));
+  sendBtn.addEventListener("click", sendMessage);
 
-    const fields = action.fields || [];
-    const inputs = {};
+  inputEl.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
 
-    fields.forEach((f) => {
-      const label = el("div", "qa-lead-label", f.label + (f.required ? " *" : ""));
-      wrap.appendChild(label);
-
-      const input = f.multiline
-        ? Object.assign(el("textarea", "qa-input"), { rows: 3 })
-        : Object.assign(el("input", "qa-input"), { type: "text" });
-
-      input.placeholder = f.label;
-      inputs[f.id] = { def: f, input };
-      wrap.appendChild(input);
-    });
-
-    const btn = el("button", "qa-btn", "Send");
-    btn.addEventListener("click", async () => {
-      const payload = {};
-      for (const [id, obj] of Object.entries(inputs)) {
-        const val = String(obj.input.value || "").trim();
-        if (obj.def.required && !val) {
-          obj.input.focus();
-          return;
-        }
-        payload[id] = val;
-      }
-      await submitLead(payload);
-    });
-
-    wrap.appendChild(btn);
-    return wrap;
-  }
-
-  function render() {
-    root.innerHTML = "";
-
-    const header = el("div", "qa-header", state.config?.businessName || "Chat");
-    const feed = el("div", "qa-feed");
-
-    state.messages.forEach((m) => {
-      if (m.role === "lead_form") {
-        feed.appendChild(renderLeadForm(m.content));
-        return;
-      }
-      const cls =
-        m.role === "user" ? "qa-msg qa-user" : m.role === "bot" ? "qa-msg qa-bot" : "qa-msg";
-      feed.appendChild(el("div", cls, m.content));
-    });
-
-    const chipsWrap = el("div", "qa-chips");
-    (state.chips || []).forEach((c) => {
-      const b = el("button", "qa-chip", c.label);
-      b.addEventListener("click", () => sendIntent(c.id));
-      chipsWrap.appendChild(b);
-    });
-
-    // OPTIONAL: typing box. Keep it simple.
-    const inputWrap = el("div", "qa-input-wrap");
-    const input = el("input", "qa-input");
-    input.placeholder = "Type here (or choose a button)…";
-
-    const sendBtn = el("button", "qa-btn", "Send");
-    sendBtn.addEventListener("click", () => {
-      const v = input.value.trim();
-      if (!v) return;
-      sendMessage(v);
-      input.value = "";
-    });
-
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        const v = input.value.trim();
-        if (!v) return;
-        sendMessage(v);
-        input.value = "";
-      }
-    });
-
-    inputWrap.appendChild(input);
-    inputWrap.appendChild(sendBtn);
-
-    root.appendChild(header);
-    root.appendChild(feed);
-    root.appendChild(chipsWrap);
-    root.appendChild(inputWrap);
-
-    feed.scrollTop = feed.scrollHeight;
-  }
-
-  (async function init() {
-    state.config = await api(`/config?${params.toString()}`);
-    state.chips = state.config?.chips || [];
-    state.messages = [];
-    push("bot", "How can I help today?");
-  })();
+  renderChips();
 })();
