@@ -289,12 +289,15 @@
       btn.type = "button";
       btn.textContent = chip.label;
 
-      btn.onclick = async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        appendMessage(chip.label, "user");
-        await sendIntent(chip.id);
-      };
+    btn.onclick = async (e) => {
+  console.log("FAQ button clicked:", chip.id);
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  appendMessage(chip.label, "user");
+  await sendIntent(chip.id);
+};
 
       chipsEl.appendChild(btn);
     });
