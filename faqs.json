@@ -1,116 +1,77 @@
 [
-  {
-    "q": "What exactly is included in my automation plan?",
-    "a": "Each plan includes workflow automation, AI assistant setup, performance analytics, and ongoing support. Higher tiers include advanced tools like sales automations, marketing flows, and custom system integrations."
-  },
-  {
-    "q": "Do you build the full website too?",
-    "a": "Yes — your system is built directly inside your website using Framer. That means your automations, booking tools, and analytics all live in one place."
-  },
-  {
-    "q": "What's the setup fee for?",
-    "a": "The setup fee covers your initial system design, full automation build-out, and training. It ensures your workflows, integrations, and dashboards launch ready to perform."
-  },
-  {
-    "q": "What is the quarterly retainer for?",
-    "a": "The quarterly retainer covers ongoing optimization, updates, and additional automations as your business grows. Think of it as your 'maintenance and growth' phase — optional, but highly recommended for evolving businesses."
-  },
-  {
-    "q": "Can I add new features later?",
-    "a": "Yes! You can add new automations or AI tools at any time — but after your initial setup, these updates are only included through a retainer plan or custom quote."
-  },
-  {
-    "q": "Why should I choose Quiet Architect over other platforms?",
-    "a": "Because we build systems that actually work. Most platforms make you do the heavy lifting. We handle it for you — so everything runs quietly in the background, smooth and seamless."
-  },
-  {
-    "q": "How is this different from a regular website builder?",
-    "a": "Website builders give you a page. We give you a system — your site, automations, and analytics all connected so your business moves on its own."
-  },
-  {
-    "q": "Is this just another marketing or funnel site?",
-    "a": "Not even close. We don’t sell hype. We build structure — the kind your business runs on every day."
-  },
-  {
-    "q": "Who is this for?",
-    "a": "Business owners, service providers, and creators who are tired of juggling apps or doing everything by hand. If you want your setup to just work, this is for you."
-  },
-  {
-    "q": "What happens after setup?",
-    "a": "You get time back. Everything keeps running — updates, leads, automation — without you having to babysit it."
-  },
-  {
-    "q": "What’s included in the retainer plan?",
-    "a": "It includes quarterly check-ins, updates, and performance tuning for your automations and AI tools — ensuring your system stays optimized as your business evolves."
-  },
-  {
-    "q": "Do you handle branding or just automation?",
-    "a": "We focus on the full system — from strategy and design to automation and delivery. Branding can be integrated if it supports your overall system architecture."
-  },
-  {
-    "q": "Can you integrate my current tools?",
-    "a": "Yes. We specialize in connecting the tools you already use — CRM, booking apps, forms, analytics — into one seamless backend system."
-  },
-  {
-    "q": "Do I need to know how to code to use this?",
-    "a": "Not at all. Everything we build runs automatically behind the scenes. You’ll have full control without ever touching code."
-  },
-  {
-    "q": "What’s included in the automation plan?",
-    "a": "Workflow automation, AI assistant setup, performance analytics, and ongoing support. Higher tiers can include sales automations, marketing flows, and integrations."
-  },
-  {
-    "q": "Do you build the full website?",
-    "a": "Yes — we build directly in Framer so your site, automations, and analytics all live in one place."
-  },
-  {
-    "q": "What’s the setup fee for?",
-    "a": "Initial system design, full automation build-out, and training so your workflows and integrations launch ready to perform."
-  },
-  {
-    "q": "Quarterly retainer?",
-    "a": "Ongoing optimization, updates, and new automations as your business grows."
-  },
-  {
-    "q": "Can I add new features later?",
-    "a": "Yes — through a retainer or custom quote whenever you’re ready."
-  },
-  {
-    "q": "Photography specials",
-    "a": "Seasonal packages are available (brand shoots, product, and lifestyle). Ask for current dates and availability."
-  },
-  {
-    "q": "Pricing",
-    "a": "Plans are scoped by business needs. Typical projects start with a setup fee and a monthly retainer. Ask for a tailored quote."
-  },
-  
-  {
-
-    "q": "What plans do you offer?",
-    "a": "We offer three automation tiers — Starter ($88/mo), Professional ($188/mo), and Enterprise ($488+/mo). Each tier scales with your business needs, automation depth, and level of support."
-  },
-  {
-    "q": "What’s included in the Starter plan?",
-    "a": "The Starter plan is $88/month or $898/year. It’s ideal for solo founders and small teams. Includes foundational workflow automation, AI-assisted workflows, basic analytics and reporting, email support with AI-assisted chat responses, and up to 3 AI integrations."
-  },
-  {
-    "q": "What’s included in the Professional plan?",
-    "a": "The Professional plan is $188/month or $1,917/year. It adds advanced workflow automation, AI-driven sales and marketing tools, enhanced analytics and insights, priority customer support, and up to 10 AI integrations. It’s our most popular plan."
-  },
-  {
-    "q": "What’s included in the Enterprise plan?",
-    "a": "Enterprise is custom starting at $488+/month or $4,978+/year. It offers fully customizable AI architecture, a dedicated automation strategist and consultant, enterprise-grade compliance and data security, 24/7 VIP support, and unlimited automations and integrations."
-  },
-  {
-    "q": "Do you offer any visual branding packages?",
-    "a": "Yes — our Visual Launch Package provides tailored photo sessions for your website, automations, and marketing content. We help you present your brand with cohesive visuals across all channels."
-  },
-  {
-    "q": "How can I schedule a call or get started?",
-    "a": "You can schedule a call directly through the chat, or by visiting our contact page. Architect can also share the booking link if you ask to 'book a call' or 'schedule a meeting'."
-  }
+{
+"id": "FAQ_ABOUT",
+"q": "What does AQA do?",
+"a": "AQA helps organizations streamline operations through automation, AI assistants, workflow optimization, analytics, and custom digital solutions. Our goal is to reduce repetitive work, improve efficiency, and help teams focus on what matters most."
+},
+{
+"id": "FAQ_IDEAL",
+"q": "Who is AQA best for?",
+"a": "AQA is designed for small businesses, nonprofits, schools, and growing organizations looking to automate repetitive tasks, improve communication, and scale operations without adding unnecessary overhead."
+},
+{
+"id": "FAQ_AUTOMATION",
+"q": "What’s included in the automation plans?",
+"a": "Every plan includes workflow automation, AI assistant setup, performance analytics, and ongoing support. Higher-tier plans include more advanced automations, integrations, reporting, and optimization services."
+},
+{
+"id": "FAQ_WEBSITE",
+"q": "Do you build websites too?",
+"a": "Yes. We can build new websites or enhance existing ones while integrating automation, AI tools, lead capture, booking systems, and analytics into a unified experience."
+},
+{
+"id": "FAQ_AI",
+"q": "What can AI actually help automate?",
+"a": "AI can assist with customer inquiries, lead qualification, appointment scheduling, internal communications, reporting, content generation, and many other repetitive business processes."
+},
+{
+"id": "FAQ_INTEGRATIONS",
+"q": "Can AQA connect with my existing tools?",
+"a": "In most cases, yes. We can integrate with platforms such as Google Workspace, Microsoft 365, Zapier, CRM systems, scheduling software, forms, databases, and many other business applications."
+},
+{
+"id": "FAQ_SETUP",
+"q": "What is the onboarding and implementation fee for?",
+"a": "The one-time onboarding and implementation fee covers system planning, automation design, setup, integrations, testing, and launch preparation. This ensures your solution is fully configured and ready to perform."
+},
+{
+"id": "FAQ_TIME",
+"q": "How long does implementation take?",
+"a": "Most projects are completed within one to three weeks depending on complexity, integrations, and the number of workflows being developed."
+},
+{
+"id": "FAQ_FEATURES",
+"q": "Can I add new features later?",
+"a": "Absolutely. New automations, AI tools, workflows, and integrations can be added as your organization grows. Additional enhancements may be covered under your existing plan or provided through a custom quote."
+},
+{
+"id": "FAQ_SUPPORT",
+"q": "Do I receive ongoing support?",
+"a": "Yes. Every plan includes ongoing support and maintenance to help keep your systems running smoothly. Higher-tier plans include additional optimization and priority assistance."
+},
+{
+"id": "FAQ_RESULTS",
+"q": "What benefits can automation provide?",
+"a": "Automation helps reduce manual work, improve response times, eliminate repetitive tasks, increase consistency, and free your team to focus on higher-value activities."
+},
+{
+"id": "FAQ_PRICING",
+"q": "What plans do you offer?",
+"a": "We offer Starter, Professional, and Enterprise plans. Each plan is designed to scale with your organization's needs. Full pricing and implementation details are available on our pricing page."
+},
+{
+"id": "FAQ_CONTRACT",
+"q": "Am I locked into a long-term contract?",
+"a": "Our services are designed to be flexible. Any applicable service terms will be clearly outlined during onboarding so you know exactly what to expect before getting started."
+},
+{
+"id": "FAQ_START",
+"q": "How do I get started?",
+"a": "Getting started is simple. Schedule a consultation, tell us about your goals and challenges, and we'll recommend the best automation and AI solutions for your organization."
+},
+{
+"id": "FAQ_BOOK",
+"q": "How can I schedule a consultation?",
+"a": "You can schedule a consultation directly through our website or contact form. We'll review your needs and create a plan tailored to your organization."
+}
 ]
-
-
-
-
