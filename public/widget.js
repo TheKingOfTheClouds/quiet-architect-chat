@@ -52,9 +52,9 @@
   style.textContent = `
     :root{
       --aqa-bg: rgba(18,18,18,.96);
-      --aqa-fg: #eaeaea;
-      --aqa-muted: #a1a1a1;
-      --aqa-accent: #c9f31d;
+      --aqa-fg: #F3F3F3;
+      --aqa-muted: #B0B0B0;
+      --aqa-accent: #B8D94A;
       --aqa-radius: 18px;
       --aqa-shadow: 0 10px 30px rgba(0,0,0,.45);
       --aqa-z: 2147483647;
@@ -123,7 +123,7 @@
       height: 10px;
       border-radius: 50%;
       background: var(--aqa-accent);
-      box-shadow: 0 0 12px var(--aqa-accent);
+      box-shadow: 0 0 6px rgba(184,217,74,.45);
       flex: 0 0 auto;
     }
 
@@ -140,8 +140,8 @@
 
     .aqa-msg{
       margin: 0 0 12px 0;
-      line-height: 1.5;
-      font-size: 14px;
+      line-height: 1.65;
+      font-size: 15px;
       white-space: pre-wrap;
     }
 
