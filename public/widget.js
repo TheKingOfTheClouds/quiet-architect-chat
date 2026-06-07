@@ -3,12 +3,49 @@
 
   if (document.querySelector(".aqa-bubble")) return;
 
-  const FAQ_CHIPS = [
-    { id: "FAQ_AUTOMATION", label: "Automation Plan" },
-    { id: "FAQ_WEBSITE", label: "Website Builds" },
-    { id: "FAQ_SETUP", label: "Setup Fee" },
-    { id: "FAQ_FEATURES", label: "Add Features" },
-    { id: "FAQ_TIME", label: "Setup Time" }
+  const FAQS = [
+    {
+      id: "FAQ_AUTOMATION",
+      label: "Automation Plan",
+      q: "What’s included in the automation plans?",
+      a: "Every plan includes workflow automation, AI assistant setup, performance analytics, and ongoing support. Higher-tier plans include more advanced automations, integrations, reporting, and optimization services."
+    },
+    {
+      id: "FAQ_WEBSITE",
+      label: "Website Builds",
+      q: "Do you build websites too?",
+      a: "Yes. We can build new websites or enhance existing ones while integrating automation, AI tools, lead capture, booking systems, and analytics into a unified experience."
+    },
+    {
+      id: "FAQ_SETUP",
+      label: "Setup Fee",
+      q: "What is the onboarding and implementation fee for?",
+      a: "The one-time onboarding and implementation fee covers system planning, automation design, setup, integrations, testing, and launch preparation. This ensures your solution is fully configured and ready to perform."
+    },
+    {
+      id: "FAQ_FEATURES",
+      label: "Add Features",
+      q: "Can I add new features later?",
+      a: "Absolutely. New automations, AI tools, workflows, and integrations can be added as your organization grows. Additional enhancements may be covered under your existing plan or provided through a custom quote."
+    },
+    {
+      id: "FAQ_TIME",
+      label: "Setup Time",
+      q: "How long does implementation take?",
+      a: "Most projects are completed within one to three weeks depending on complexity, integrations, and the number of workflows being developed."
+    },
+    {
+      id: "FAQ_PRICING",
+      label: "Pricing",
+      q: "What plans do you offer?",
+      a: "We offer Starter, Professional, and Enterprise plans. Each plan is designed to scale with your organization's needs. Full pricing and implementation details are available on our pricing page."
+    },
+    {
+      id: "FAQ_START",
+      label: "Get Started",
+      q: "How do I get started?",
+      a: "Getting started is simple. Schedule a consultation, tell us about your goals and challenges, and we'll recommend the best automation and AI solutions for your organization."
+    }
   ];
 
   const style = document.createElement("style");
@@ -20,7 +57,14 @@
       --aqa-accent: #c9f31d;
       --aqa-radius: 18px;
       --aqa-shadow: 0 10px 30px rgba(0,0,0,.45);
-      --aqa-z: 9999;
+      --aqa-z: 2147483647;
+    }
+
+    .aqa-bubble,
+    .aqa-card,
+    .aqa-card *{
+      box-sizing: border-box;
+      pointer-events: auto !important;
     }
 
     .aqa-bubble{
@@ -98,6 +142,7 @@
       margin: 0 0 12px 0;
       line-height: 1.5;
       font-size: 14px;
+      white-space: pre-wrap;
     }
 
     .aqa-msg.user{
@@ -119,18 +164,10 @@
       border: 1px solid rgba(255,255,255,.08);
       color: var(--aqa-fg);
       cursor: pointer;
-      transition: background .15s ease, transform .15s ease;
     }
 
     .aqa-chip:hover{
       background: #2a2a2a;
-      transform: translateY(-1px);
-    }
-
-    .aqa-chip:disabled{
-      opacity: .65;
-      cursor: default;
-      transform: none;
     }
 
     .aqa-input{
@@ -142,6 +179,7 @@
 
     .aqa-input input{
       flex: 1;
+      min-width: 0;
       padding: 10px;
       border-radius: 10px;
       border: 1px solid rgba(255,255,255,.08);
@@ -169,6 +207,7 @@
         right: 14px;
         bottom: 82px;
         width: calc(100vw - 28px);
+        max-height: 75vh;
       }
     }
   `;
@@ -213,46 +252,52 @@
     bodyEl.scrollTop = bodyEl.scrollHeight;
   }
 
+  function getLocalReply(intent) {
+    const faq = FAQS.find((item) => item.id === intent);
+    return faq ? faq.a : "I can help with automation plans, websites, setup fees, pricing, and getting started.";
+  }
+
+  async function api(path, body) {
+    const res = await fetch(`${API_BASE}${path}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`);
+    return res.json();
+  }
+
+  async function sendIntent(intent) {
+    const fallbackReply = getLocalReply(intent);
+
+    try {
+      const data = await api("/chat", { intent });
+      appendMessage(data.reply || fallbackReply);
+    } catch (err) {
+      appendMessage(fallbackReply);
+      console.error("AQA intent error:", err);
+    }
+  }
+
   function renderChips() {
     chipsEl.innerHTML = "";
 
-    FAQ_CHIPS.forEach((chip) => {
+    FAQS.forEach((chip) => {
       const btn = document.createElement("button");
       btn.className = "aqa-chip";
       btn.type = "button";
       btn.textContent = chip.label;
 
-      btn.addEventListener("click", async () => {
+      btn.onclick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         appendMessage(chip.label, "user");
         await sendIntent(chip.id);
-      });
+      };
 
       chipsEl.appendChild(btn);
     });
-  }
-
-  async function api(path, body) {
-    const res = await fetch(`${API_BASE}${path}`, {
-      method: body ? "POST" : "GET",
-      headers: body ? { "Content-Type": "application/json" } : {},
-      body: body ? JSON.stringify(body) : undefined
-    });
-
-    if (!res.ok) {
-      throw new Error(`Request failed: ${res.status}`);
-    }
-
-    return res.json();
-  }
-
-  async function sendIntent(intent) {
-    try {
-      const data = await api("/chat", { intent });
-      appendMessage(data.reply || "No reply returned.");
-    } catch (err) {
-      appendMessage("Something went wrong connecting to chat.");
-      console.error("AQA intent error:", err);
-    }
   }
 
   function sendMessage() {
@@ -261,14 +306,20 @@
 
     appendMessage(text, "user");
     inputEl.value = "";
-    appendMessage("Please use one of the quick question buttons below for now.");
+    appendMessage("Thanks for reaching out. For now, please use one of the quick question buttons, or schedule a consultation through our contact page.");
   }
 
-  bubble.addEventListener("click", () => {
+  bubble.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     card.classList.toggle("open");
-  });
+  };
 
-  sendBtn.addEventListener("click", sendMessage);
+  sendBtn.onclick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    sendMessage();
+  };
 
   inputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") sendMessage();
