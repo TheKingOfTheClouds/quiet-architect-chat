@@ -47,7 +47,7 @@
 {
 "id": "FAQ_SUPPORT",
 "q": "Do I receive ongoing support?",
-"a": "Yes. Every plan includes ongoing support and maintenance to help keep your systems running smoothly. Higher-tier plans include additional optimization and priority assistance."
+"a": "Yes. Every plan includes ongoing system maintenance, monitoring, and optimization. Quarterly strategy reviews help identify opportunities for improvement, while higher-tier plans include enhanced optimization services, priority response times, and additional strategic guidance."
 },
 {
 "id": "FAQ_RESULTS",
@@ -73,5 +73,26 @@
 "id": "FAQ_BOOK",
 "q": "How can I schedule a consultation?",
 "a": "You can schedule a consultation directly through our website or contact form. We'll review your needs and create a plan tailored to your organization."
+},
+{
+"id": "FAQ_REVIEW",
+"q": "What is included in a Quarterly AI Strategy Review?",
+"a": "Quarterly AI Strategy Reviews help ensure your systems continue evolving alongside your organization. During each review, AQA evaluates automation performance, analytics, workflows, and business goals to identify opportunities for optimization and future enhancements."
+},
+{
+"id": "FAQ_WORKFLOW",
+"q": "What is a workflow automation?",
+"a": "A workflow automation is a process that automatically performs tasks or moves information between systems without manual effort. Examples include lead routing, appointment scheduling, follow-up sequences, CRM updates, notifications, approvals, and data synchronization."
+},
+{
+"id": "FAQ_CUSTOM",
+"q": "What is considered custom development?",
+"a": "Custom development includes additional websites, landing pages, advanced automations, custom integrations, CRM deployments, AI solutions, or any work outside the scope of your selected plan. Custom projects may require separate scoping, implementation fees, and timelines."
+},
+{
+"id": "FAQ_AI_INTEGRATION",
+"q": "What counts as an AI integration?",
+"a": "AI integrations connect your existing business tools and platforms to create automated workflows and intelligent processes. Examples include Google Workspace, Microsoft 365, Calendly, HubSpot, Salesforce, Zapier, CRM systems, scheduling platforms, forms, databases, and other supported business applications."
 }
+
 ]
