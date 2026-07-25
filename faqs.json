@@ -1,98 +1,97 @@
 [
-{
-"id": "FAQ_ABOUT",
-"q": "What does AQA do?",
-"a": "AQA helps organizations streamline operations through automation, AI assistants, workflow optimization, analytics, and custom digital solutions. Our goal is to reduce repetitive work, improve efficiency, and help teams focus on what matters most."
-},
-{
-"id": "FAQ_IDEAL",
-"q": "Who is AQA best for?",
-"a": "AQA is designed for small businesses, nonprofits, schools, and growing organizations looking to automate repetitive tasks, improve communication, and scale operations without adding unnecessary overhead."
-},
-{
-"id": "FAQ_AUTOMATION",
-"q": "What’s included in the automation plans?",
-"a": "Every plan includes workflow automation, AI assistant setup, performance analytics, and ongoing support. Higher-tier plans include more advanced automations, integrations, reporting, and optimization services."
-},
-{
-"id": "FAQ_WEBSITE",
-"q": "Do you build websites too?",
-"a": "Yes. We can build new websites or enhance existing ones while integrating automation, AI tools, lead capture, booking systems, and analytics into a unified experience."
-},
-{
-"id": "FAQ_AI",
-"q": "What can AI actually help automate?",
-"a": "AI can assist with customer inquiries, lead qualification, appointment scheduling, internal communications, reporting, content generation, and many other repetitive business processes."
-},
-{
-"id": "FAQ_INTEGRATIONS",
-"q": "Can AQA connect with my existing tools?",
-"a": "In most cases, yes. We can integrate with platforms such as Google Workspace, Microsoft 365, Zapier, CRM systems, scheduling software, forms, databases, and many other business applications."
-},
-{
-"id": "FAQ_SETUP",
-"q": "What is the onboarding and implementation fee for?",
-"a": "The one-time onboarding and implementation fee covers system planning, automation design, setup, integrations, testing, and launch preparation. This ensures your solution is fully configured and ready to perform."
-},
-{
-"id": "FAQ_TIME",
-"q": "How long does implementation take?",
-"a": "Most projects are completed within one to three weeks depending on complexity, integrations, and the number of workflows being developed."
-},
-{
-"id": "FAQ_FEATURES",
-"q": "Can I add new features later?",
-"a": "Absolutely. New automations, AI tools, workflows, and integrations can be added as your organization grows. Additional enhancements may be covered under your existing plan or provided through a custom quote."
-},
-{
-"id": "FAQ_SUPPORT",
-"q": "Do I receive ongoing support?",
-"a": "Yes. Every plan includes ongoing system maintenance, monitoring, and optimization. Quarterly strategy reviews help identify opportunities for improvement, while higher-tier plans include enhanced optimization services, priority response times, and additional strategic guidance."
-},
-{
-"id": "FAQ_RESULTS",
-"q": "What benefits can automation provide?",
-"a": "Automation helps reduce manual work, improve response times, eliminate repetitive tasks, increase consistency, and free your team to focus on higher-value activities."
-},
-{
-"id": "FAQ_PRICING",
-"q": "What plans do you offer?",
-"a": "We offer Starter, Professional, and Enterprise plans. Each plan is designed to scale with your organization's needs. Full pricing and implementation details are available on our pricing page."
-},
-{
-"id": "FAQ_CONTRACT",
-"q": "Am I locked into a long-term contract?",
-"a": "Our services are designed to be flexible. Any applicable service terms will be clearly outlined during onboarding so you know exactly what to expect before getting started."
-},
-{
-"id": "FAQ_START",
-"q": "How do I get started?",
-"a": "Getting started is simple. Schedule a consultation, tell us about your goals and challenges, and we'll recommend the best automation and AI solutions for your organization."
-},
-{
-"id": "FAQ_BOOK",
-"q": "How can I schedule a consultation?",
-"a": "You can schedule a consultation directly through our website or contact form. We'll review your needs and create a plan tailored to your organization."
-},
-{
-"id": "FAQ_REVIEW",
-"q": "What is included in a Quarterly AI Strategy Review?",
-"a": "Quarterly AI Strategy Reviews help ensure your systems continue evolving alongside your organization. During each review, AQA evaluates automation performance, analytics, workflows, and business goals to identify opportunities for optimization and future enhancements."
-},
-{
-"id": "FAQ_WORKFLOW",
-"q": "What is a workflow automation?",
-"a": "A workflow automation is a process that automatically performs tasks or moves information between systems without manual effort. Examples include lead routing, appointment scheduling, follow-up sequences, CRM updates, notifications, approvals, and data synchronization."
-},
-{
-"id": "FAQ_CUSTOM",
-"q": "What is considered custom development?",
-"a": "Custom development includes additional websites, landing pages, advanced automations, custom integrations, CRM deployments, AI solutions, or any work outside the scope of your selected plan. Custom projects may require separate scoping, implementation fees, and timelines."
-},
-{
-"id": "FAQ_AI_INTEGRATION",
-"q": "What counts as an AI integration?",
-"a": "AI integrations connect your existing business tools and platforms to create automated workflows and intelligent processes. Examples include Google Workspace, Microsoft 365, Calendly, HubSpot, Salesforce, Zapier, CRM systems, scheduling platforms, forms, databases, and other supported business applications."
-}
-
+  {
+    "id": "FAQ_ABOUT",
+    "q": "What does AQO do?",
+    "a": "A Quiet Origin builds connected digital systems for businesses and organizations. Our services may include professional websites, landing pages, lead capture, workflow automation, client onboarding, integrations, analytics, interactive FAQ assistants, and AI tools used where they add practical value."
+  },
+  {
+    "id": "FAQ_IDEAL",
+    "q": "Who is AQO best for?",
+    "a": "AQO is designed for small businesses, nonprofits, service providers, and growing organizations that want to improve their digital presence, reduce repetitive work, strengthen communication, and create clearer operational systems."
+  },
+  {
+    "id": "FAQ_AUTOMATION",
+    "q": "What is included in each AQO plan?",
+    "a": "Starter provides a streamlined digital foundation with a professional landing page, lead capture, an interactive FAQ assistant, basic analytics, approved integrations, standard support, and a Quarterly AI Strategy Review. Professional adds a template-based website, stronger lead management, follow-up workflows, booking and onboarding automation, enhanced analytics, approved integrations, and priority support. Enterprise is custom scoped for advanced automation, AI features, integrations, reporting, data flows, stakeholder workflows, and specialized support. Final deliverables are confirmed in the approved proposal and Statement of Work."
+  },
+  {
+    "id": "FAQ_WEBSITE",
+    "q": "Do you build websites and landing pages?",
+    "a": "Yes. AQO builds professional landing pages and websites as part of a connected digital system. Starter typically includes a focused landing page, Professional may include a website based on an AQO template, and Enterprise website work is customized according to the approved project scope."
+  },
+  {
+    "id": "FAQ_AI",
+    "q": "How can AI support my business?",
+    "a": "AI tools may assist with customer guidance, FAQ responses, content drafts, intake organization, workflow planning, reporting, and other repetitive processes. AI is used as a support tool and does not replace human review, business judgment, or professional advice."
+  },
+  {
+    "id": "FAQ_INTEGRATIONS",
+    "q": "Can AQO connect with my existing tools?",
+    "a": "In many cases, yes. AQO can connect approved platforms such as Google Workspace, Microsoft 365, Zapier, CRM systems, scheduling tools, forms, spreadsheets, email platforms, and other supported business applications. Final integrations depend on platform compatibility, account access, the selected plan, and the approved Statement of Work."
+  },
+  {
+    "id": "FAQ_SETUP",
+    "q": "What does the onboarding and implementation fee cover?",
+    "a": "The onboarding and implementation fee covers the initial planning, discovery, account setup, system configuration, testing, documentation, and launch preparation required for the approved project. Depending on the scope, this may include website setup, lead capture, automation, chatbot configuration, analytics, and integrations. Third-party platform fees and out-of-scope work are separate unless included in writing."
+  },
+  {
+    "id": "FAQ_TIME",
+    "q": "How long does implementation take?",
+    "a": "Most standard AQO projects are targeted for completion within approximately 14 days after required payment, access, content, assets, and approvals are received. Complex integrations, custom systems, delayed feedback, or missing client materials may extend the timeline. The final schedule is confirmed in the Statement of Work."
+  },
+  {
+    "id": "FAQ_FEATURES",
+    "q": "Can I add new features later?",
+    "a": "Yes. New pages, workflows, automation, integrations, reporting, AI features, or custom development can be added as your business grows. Smaller improvements may be included in your active service plan when approved. Larger requests may require a Change Order, separate proposal, or custom quote."
+  },
+  {
+    "id": "FAQ_SUPPORT",
+    "q": "Do I receive ongoing support?",
+    "a": "Yes, according to the support included in your selected plan and Statement of Work. Starter includes standard support, Professional includes priority support, and Enterprise support is tailored to the approved scope. Maintenance, monitoring, optimization, and additional implementation are only included when specifically stated in writing."
+  },
+  {
+    "id": "FAQ_RESULTS",
+    "q": "What benefits can connected digital systems provide?",
+    "a": "Connected systems can reduce repetitive work, improve response times, organize lead information, strengthen client follow-through, and create a more consistent operating process. Results depend on the approved system, client participation, third-party platforms, and ongoing business execution."
+  },
+  {
+    "id": "FAQ_PRICING",
+    "q": "What plans does AQO offer?",
+    "a": "AQO offers Starter at $88 per month or $898 per year with a $299 onboarding and implementation fee, Professional at $188 per month or $1,917 per year with a $599 onboarding and implementation fee, and Enterprise starting at $488 per month or $4,978 per year with a $1,499 or higher onboarding and implementation fee. Final pricing, scope, third-party costs, and deliverables are confirmed in the approved proposal and Statement of Work."
+  },
+  {
+    "id": "FAQ_CONTRACT",
+    "q": "Am I locked into a long-term contract?",
+    "a": "Any service term, renewal period, cancellation requirement, or recurring billing arrangement will be clearly stated in your agreement before work begins. The applicable Master Services Agreement, Statement of Work, and payment terms control the final arrangement."
+  },
+  {
+    "id": "FAQ_START",
+    "q": "How do I get started?",
+    "a": "Start by scheduling a consultation and telling us about your goals, current tools, challenges, and timeline. AQO will review your needs, recommend the appropriate plan or custom solution, and confirm the scope, pricing, and next steps in writing."
+  },
+  {
+    "id": "FAQ_BOOK",
+    "q": "How can I schedule a consultation?",
+    "a": "You can schedule a consultation through the AQO website or submit the contact form. We will review your information and discuss the website, automation, integrations, and digital support that may fit your organization."
+  },
+  {
+    "id": "FAQ_REVIEW",
+    "q": "What happens during a Quarterly AI Strategy Review?",
+    "a": "A Quarterly AI Strategy Review is a structured improvement session where AQO reviews your current system, performance, workflows, lead handling, and operational needs. We identify practical opportunities for better efficiency using automation, AI tools, reporting, or workflow changes. Quarterly reviews do not include unlimited development, new websites, advanced integrations, or major system rebuilds."
+  },
+  {
+    "id": "FAQ_WORKFLOW",
+    "q": "What is workflow automation?",
+    "a": "Workflow automation allows approved tasks or information to move between systems with less manual effort. Examples include saving leads, sending confirmation emails, creating internal notifications, updating spreadsheets or CRMs, scheduling appointments, supporting onboarding, and creating follow-up reminders."
+  },
+  {
+    "id": "FAQ_CUSTOM",
+    "q": "What is considered custom development?",
+    "a": "Custom development may include additional websites, landing pages, advanced automation, new integrations, CRM deployments, custom AI features, specialized reporting, major revisions, or work outside the approved plan and Statement of Work. Custom requests may require separate scoping, pricing, implementation fees, and timelines."
+  },
+  {
+    "id": "FAQ_AI_INTEGRATION",
+    "q": "What counts as an approved integration?",
+    "a": "An approved integration connects two or more supported business platforms so information or actions can move between them. Examples may include Google Workspace, Microsoft 365, Calendly, HubSpot, Salesforce, Zapier, forms, spreadsheets, CRM systems, email platforms, and scheduling tools. Each integration must be reviewed for compatibility, access, security, scope, and pricing."
+  }
 ]
